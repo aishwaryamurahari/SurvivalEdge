@@ -76,7 +76,7 @@ fun ModelManager(
     topBar = {
       GalleryTopAppBar(
         title = title,
-        leftAction = AppBarAction(actionType = AppBarActionType.NAVIGATE_UP, actionFn = navigateUp),
+        //leftAction = AppBarAction(actionType = AppBarActionType.NAVIGATE_UP, actionFn = navigateUp),
       )
     },
   ) { innerPadding ->

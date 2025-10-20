@@ -197,35 +197,35 @@ fun ModelList(
           )
 
           // Urls.
-          if (task.docUrl.isNotEmpty() || task.sourceCodeUrl.isNotEmpty()) {
-            Box(
-              modifier =
-                Modifier.padding(vertical = 8.dp).graphicsLayer {
-                  alpha = descriptionProgress
-                  translationY = (CONTENT_ANIMATION_OFFSET * (1 - descriptionProgress)).toPx()
-                }
-            ) {
-              Column(
-                horizontalAlignment = Alignment.Start,
-                verticalArrangement = Arrangement.spacedBy(4.dp),
-              ) {
-                if (task.docUrl.isNotEmpty()) {
-                  ClickableLink(
-                    url = task.docUrl,
-                    linkText = "API Documentation",
-                    icon = Icons.Outlined.Description,
-                  )
-                }
-                if (task.sourceCodeUrl.isNotEmpty()) {
-                  ClickableLink(
-                    url = task.sourceCodeUrl,
-                    linkText = "Example code",
-                    icon = Icons.Outlined.Code,
-                  )
-                }
-              }
-            }
-          }
+            // if (task.docUrl.isNotEmpty() || task.sourceCodeUrl.isNotEmpty()) {
+            //   Box(
+            //     modifier =
+            //       Modifier.padding(vertical = 8.dp).graphicsLayer {
+            //         alpha = descriptionProgress
+            //         translationY = (CONTENT_ANIMATION_OFFSET * (1 - descriptionProgress)).toPx()
+            //       }
+            //   ) {
+            //     Column(
+            //       horizontalAlignment = Alignment.Start,
+            //       verticalArrangement = Arrangement.spacedBy(4.dp),
+            //     ) {
+            //       if (task.docUrl.isNotEmpty()) {
+            //         ClickableLink(
+            //           url = task.docUrl,
+            //           linkText = "API Documentation",
+            //           icon = Icons.Outlined.Description,
+            //         )
+            //       }
+            //       if (task.sourceCodeUrl.isNotEmpty()) {
+            //         ClickableLink(
+            //           url = task.sourceCodeUrl,
+            //           linkText = "Example code",
+            //           icon = Icons.Outlined.Code,
+            //         )
+            //       }
+            //     }
+            //   }
+            // }
 
           // Models available.
           val resources = LocalContext.current.resources

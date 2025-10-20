@@ -97,13 +97,13 @@ internal object LlmChatTaskModule {
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-// Ask image.
+// Survival Edge.
 
 class LlmAskImageTask @Inject constructor() : CustomTask {
   override val task: Task =
     Task(
       id = BuiltInTaskId.LLM_ASK_IMAGE,
-      label = "Ask Image",
+      label = "Survival Edge",
       category = Category.LLM,
       icon = Icons.Outlined.Mms,
       models = mutableListOf(),

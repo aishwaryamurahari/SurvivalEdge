@@ -59,6 +59,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.google.ai.edge.gallery.customtasks.common.CustomTaskData
 import com.google.ai.edge.gallery.customtasks.common.CustomTaskDataForBuiltinTask
+import com.google.ai.edge.gallery.data.BuiltInTaskId
 import com.google.ai.edge.gallery.data.ModelDownloadStatusType
 import com.google.ai.edge.gallery.data.Task
 import com.google.ai.edge.gallery.data.isBuiltInTask
@@ -143,15 +144,43 @@ fun GalleryNavHost(
     onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
   }
 
-  HomeScreen(
-    modelManagerViewModel = modelManagerViewModel,
-    tosViewModel = hiltViewModel(),
-    navigateToTaskScreen = { task ->
-      pickedTask = task
-      showModelManager = true
-      firebaseAnalytics?.logEvent("capability_select", bundleOf("capability_name" to task.id))
-    },
-  )
+  // Auto-redirect to Ask Image task
+  //LaunchedEffect(Unit) {
+    // Wait for tasks to be loaded
+    //val tasks = modelManagerViewModel.uiState.value.tasks
+    //if (tasks.isNotEmpty()) {
+    //  val askImageTask = modelManagerViewModel.getTaskById(BuiltInTaskId.LLM_ASK_IMAGE)
+      //if (askImageTask != null) {
+        //pickedTask = askImageTask
+        //showModelManager = true
+        //firebaseAnalytics?.logEvent("capability_select", bundleOf("capability_name" to askImageTask.id))
+     // }
+    //}
+  //}
+
+  LaunchedEffect(Unit) {
+    // Wait for tasks to be loaded
+    val tasks = modelManagerViewModel.uiState.value.tasks
+    if (tasks.isNotEmpty()) {
+      val askImageTask = modelManagerViewModel.getTaskById(BuiltInTaskId.LLM_ASK_IMAGE)
+      if (askImageTask != null) {
+        pickedTask = askImageTask
+        showModelManager = true
+        firebaseAnalytics?.logEvent("capability_select", bundleOf("capability_name" to askImageTask.id))
+      }
+    }
+  }
+
+  // Hide HomeScreen since we auto-redirect to Ask Image
+  // HomeScreen(
+  //   modelManagerViewModel = modelManagerViewModel,
+  //   tosViewModel = hiltViewModel(),
+  //   navigateToTaskScreen = { task ->
+  //     pickedTask = task
+  //     showModelManager = true
+  //     firebaseAnalytics?.logEvent("capability_select", bundleOf("capability_name" to task.id))
+  //   },
+  // )
 
   // Model manager.
   AnimatedVisibility(

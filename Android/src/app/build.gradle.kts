@@ -32,16 +32,18 @@ android {
   compileSdk = 35
 
   defaultConfig {
-    applicationId = "com.google.aiedge.gallery"
+    applicationId = "com.google.ai.edge.gallery"
     minSdk = 31
     targetSdk = 35
     versionCode = 13
     versionName = "1.0.7"
 
+    // Gmail OAuth Client ID for email integration
+    buildConfigField("String", "GMAIL_CLIENT_ID", "Add your Gmail OAuth Client ID here")
+
     // Needed for HuggingFace auth workflows.
     // Use the scheme of the "Redirect URLs" in HuggingFace app.
-    manifestPlaceholders["appAuthRedirectScheme"] =
-        "REPLACE_WITH_YOUR_REDIRECT_SCHEME_IN_HUGGINGFACE_APP"
+    manifestPlaceholders["appAuthRedirectScheme"] = "com.google.ai.edge.gallery:/oauth2redirect"
     manifestPlaceholders["applicationName"] = "com.google.ai.edge.gallery.GalleryApplication"
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
