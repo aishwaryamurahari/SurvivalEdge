@@ -54,6 +54,7 @@ import androidx.compose.ui.unit.sp
 import com.google.ai.edge.gallery.R
 import com.google.ai.edge.gallery.data.Model
 import com.google.ai.edge.gallery.data.Task
+import com.google.ai.edge.gallery.data.CloudModelDefinitions
 import com.google.ai.edge.gallery.ui.common.modelitem.StatusIcon
 import com.google.ai.edge.gallery.ui.modelmanager.ModelManagerViewModel
 import com.google.ai.edge.gallery.ui.theme.labelSmallNarrow
@@ -90,8 +91,12 @@ fun ModelPicker(
       )
     }
 
-    // Model list.
-    for (model in task.models) {
+    // Model list (local models + cloud models)
+    val allModels = remember {
+      task.models + CloudModelDefinitions.CLOUD_MODELS
+    }
+
+    for (model in allModels) {
       val selected = model.name == modelManagerUiState.selectedModel.name
       Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -99,12 +104,25 @@ fun ModelPicker(
         modifier =
           Modifier.fillMaxWidth()
             .clickable {
-              // Show memory warning before proceeding.
-              if (isMemoryLow(context = context, model = model)) {
-                modelToPick = model
-                showMemoryWarning = true
+              if (model.isCloudModel) {
+                // For cloud models, check connection status
+                val cloudConfig = modelManagerUiState.cloudApiConfigs.find { it.provider == model.cloudProvider }
+                val isConnected = cloudConfig?.isConnected ?: false
+                if (isConnected) {
+                  onModelSelected(model)
+                } else {
+                  // Cloud model not connected - this should be handled by the parent
+                  // For now, just select the model (parent should handle API key flow)
+                  onModelSelected(model)
+                }
               } else {
-                onModelSelected(model)
+                // For local models, show memory warning before proceeding
+                if (isMemoryLow(context = context, model = model)) {
+                  modelToPick = model
+                  showMemoryWarning = true
+                } else {
+                  onModelSelected(model)
+                }
               }
             }
             .background(
@@ -122,18 +140,30 @@ fun ModelPicker(
             horizontalArrangement = Arrangement.spacedBy(4.dp),
             verticalAlignment = Alignment.CenterVertically,
           ) {
-            StatusIcon(
-              task = task,
-              model = model,
-              downloadStatus = modelManagerUiState.modelDownloadStatus[model.name],
-            )
-            Text(
-              if (model.localFileRelativeDirPathOverride.isEmpty())
-                model.sizeInBytes.humanReadableSize()
-              else "{ext_file_dir}/${model.localFileRelativeDirPathOverride}",
-              color = MaterialTheme.colorScheme.onSurfaceVariant,
-              style = labelSmallNarrow.copy(lineHeight = 10.sp),
-            )
+            if (model.isCloudModel) {
+              // For cloud models, show connection status
+              val cloudConfig = modelManagerUiState.cloudApiConfigs.find { it.provider == model.cloudProvider }
+              val isConnected = cloudConfig?.isConnected ?: false
+              Text(
+                if (isConnected) "Connected" else "Not connected",
+                color = if (isConnected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                style = labelSmallNarrow.copy(lineHeight = 10.sp),
+              )
+            } else {
+              // For local models, show download status and size
+              StatusIcon(
+                task = task,
+                model = model,
+                downloadStatus = modelManagerUiState.modelDownloadStatus[model.name],
+              )
+              Text(
+                if (model.localFileRelativeDirPathOverride.isEmpty())
+                  model.sizeInBytes.humanReadableSize()
+                else "{ext_file_dir}/${model.localFileRelativeDirPathOverride}",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = labelSmallNarrow.copy(lineHeight = 10.sp),
+              )
+            }
           }
         }
         if (selected) {

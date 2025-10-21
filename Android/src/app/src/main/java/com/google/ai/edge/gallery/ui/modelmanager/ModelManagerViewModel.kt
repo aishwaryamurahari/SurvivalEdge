@@ -42,6 +42,7 @@ import com.google.ai.edge.gallery.data.TMP_FILE_EXT
 import com.google.ai.edge.gallery.data.Task
 import com.google.ai.edge.gallery.data.createLlmChatConfigs
 import com.google.ai.edge.gallery.proto.AccessTokenData
+import com.google.ai.edge.gallery.proto.CloudApiConfig
 import com.google.ai.edge.gallery.proto.ImportedModel
 import com.google.ai.edge.gallery.proto.Theme
 import com.google.gson.Gson
@@ -118,6 +119,9 @@ data class ModelManagerUiState(
   /** The history of text inputs entered by the user. */
   val textInputHistory: List<String> = listOf(),
   val configValuesUpdateTrigger: Long = 0L,
+
+  /** Cloud API configurations for cloud models */
+  val cloudApiConfigs: List<com.google.ai.edge.gallery.proto.CloudApiConfig> = listOf(),
 ) {
   fun isModelInitialized(model: Model): Boolean {
     return modelInitializationStatus[model.name]?.status ==
@@ -760,6 +764,9 @@ constructor(
         // Update UI state.
         _uiState.update { createUiState().copy(loadingModelAllowlist = false, tasks = curTasks) }
 
+        // Load cloud API configs
+        loadCloudApiConfigs()
+
         // Process pending downloads.
         processPendingDownloads()
       } catch (e: Exception) {
@@ -1034,5 +1041,60 @@ constructor(
         )
 
     return downloadedFileExists || unzippedDirectoryExists
+  }
+
+
+  fun saveCloudApiConfig(provider: String, apiKey: String, modelName: String) {
+    viewModelScope.launch {
+      val config = CloudApiConfig.newBuilder()
+        .setProvider(provider)
+        .setApiKey(apiKey)
+        .setModelName(modelName)
+        .setIsConnected(true)
+        .build()
+
+      dataStoreRepository.saveCloudApiConfig(config)
+      loadCloudApiConfigs()
+    }
+  }
+
+  fun clearCloudApiConfig(provider: String) {
+    viewModelScope.launch {
+      dataStoreRepository.clearCloudApiConfig(provider)
+      loadCloudApiConfigs()
+    }
+  }
+
+  private fun loadCloudApiConfigs() {
+    viewModelScope.launch {
+      val configs = dataStoreRepository.readCloudApiConfigs()
+      _uiState.value = _uiState.value.copy(cloudApiConfigs = configs)
+    }
+  }
+
+  fun initializeCloudModel(context: Context, model: Model, apiKey: String) {
+    viewModelScope.launch {
+      com.google.ai.edge.gallery.ui.llmchat.CloudModelHelper.initialize(
+        context = context,
+        model = model,
+        apiKey = apiKey,
+        onDone = { error ->
+          if (error.isEmpty()) {
+            // Model initialized successfully
+            updateCloudApiConnectionStatus(model.cloudProvider, true)
+          } else {
+            // Handle error
+            Log.e(TAG, "Failed to initialize cloud model: $error")
+          }
+        }
+      )
+    }
+  }
+
+  private fun updateCloudApiConnectionStatus(provider: String, isConnected: Boolean) {
+    viewModelScope.launch {
+      dataStoreRepository.updateCloudApiConnectionStatus(provider, isConnected)
+      loadCloudApiConfigs()
+    }
   }
 }

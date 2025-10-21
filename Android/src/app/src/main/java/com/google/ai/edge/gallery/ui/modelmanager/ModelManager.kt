@@ -29,13 +29,17 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import com.google.ai.edge.gallery.GalleryTopAppBar
 import com.google.ai.edge.gallery.data.AppBarAction
 import com.google.ai.edge.gallery.data.AppBarActionType
 import com.google.ai.edge.gallery.data.Model
 import com.google.ai.edge.gallery.data.Task
+import com.google.ai.edge.gallery.ui.common.ApiKeyDialog
 
 /** A screen to manage models. */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -47,6 +51,12 @@ fun ModelManager(
   onModelClicked: (Model) -> Unit,
   modifier: Modifier = Modifier,
 ) {
+  val context = LocalContext.current
+
+  // Dialog state management
+  var showApiKeyDialog by remember { mutableStateOf(false) }
+  var selectedModelForApiKey by remember { mutableStateOf<Model?>(null) }
+
   // Set title based on the task.
   val title = task.label
   // Model count.
@@ -71,6 +81,26 @@ fun ModelManager(
   // Handle system's edge swipe.
   BackHandler { navigateUp() }
 
+  // API key click handler
+  val onApiKeyClicked = { model: Model ->
+    selectedModelForApiKey = model
+    showApiKeyDialog = true
+  }
+
+  // API key save handler
+  val onApiKeySaved = { apiKey: String ->
+    selectedModelForApiKey?.let { model ->
+      viewModel.saveCloudApiConfig(
+        provider = model.cloudProvider,
+        apiKey = apiKey,
+        modelName = model.cloudModelName
+      )
+      viewModel.initializeCloudModel(context, model, apiKey)
+    }
+    showApiKeyDialog = false
+    selectedModelForApiKey = null
+  }
+
   Scaffold(
     modifier = modifier,
     topBar = {
@@ -85,9 +115,20 @@ fun ModelManager(
       modelManagerViewModel = viewModel,
       contentPadding = innerPadding,
       onModelClicked = onModelClicked,
+      onApiKeyClicked = onApiKeyClicked,
       modifier = Modifier.fillMaxSize(),
     )
   }
+
+  // API Key Dialog
+  ApiKeyDialog(
+    model = selectedModelForApiKey,
+    onDismiss = {
+      showApiKeyDialog = false
+      selectedModelForApiKey = null
+    },
+    onSave = onApiKeySaved
+  )
 }
 
 // @Preview

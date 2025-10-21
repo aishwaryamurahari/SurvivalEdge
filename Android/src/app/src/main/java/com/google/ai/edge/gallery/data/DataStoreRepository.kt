@@ -18,6 +18,7 @@ package com.google.ai.edge.gallery.data
 
 import androidx.datastore.core.DataStore
 import com.google.ai.edge.gallery.proto.AccessTokenData
+import com.google.ai.edge.gallery.proto.CloudApiConfig
 import com.google.ai.edge.gallery.proto.ImportedModel
 import com.google.ai.edge.gallery.proto.Settings
 import com.google.ai.edge.gallery.proto.Theme
@@ -48,6 +49,16 @@ interface DataStoreRepository {
   fun isTosAccepted(): Boolean
 
   fun acceptTos()
+
+  fun saveCloudApiConfig(config: CloudApiConfig)
+
+  fun readCloudApiConfigs(): List<CloudApiConfig>
+
+  fun readCloudApiConfig(provider: String): CloudApiConfig?
+
+  fun clearCloudApiConfig(provider: String)
+
+  fun updateCloudApiConnectionStatus(provider: String, isConnected: Boolean)
 }
 
 /** Repository for managing data using Proto DataStore. */
@@ -148,6 +159,58 @@ class DefaultDataStoreRepository(
   override fun acceptTos() {
     runBlocking {
       dataStore.updateData { settings -> settings.toBuilder().setIsTosAccepted(true).build() }
+    }
+  }
+
+  override fun saveCloudApiConfig(config: CloudApiConfig) {
+    runBlocking {
+      dataStore.updateData { settings ->
+        val currentConfigs = settings.cloudApiConfigsList.toMutableList()
+        val existingIndex = currentConfigs.indexOfFirst { it.provider == config.provider }
+        if (existingIndex >= 0) {
+          currentConfigs[existingIndex] = config
+        } else {
+          currentConfigs.add(config)
+        }
+        settings.toBuilder().clearCloudApiConfigs().addAllCloudApiConfigs(currentConfigs).build()
+      }
+    }
+  }
+
+  override fun readCloudApiConfigs(): List<CloudApiConfig> {
+    return runBlocking {
+      val settings = dataStore.data.first()
+      settings.cloudApiConfigsList
+    }
+  }
+
+  override fun readCloudApiConfig(provider: String): CloudApiConfig? {
+    return runBlocking {
+      val settings = dataStore.data.first()
+      settings.cloudApiConfigsList.find { it.provider == provider }
+    }
+  }
+
+  override fun clearCloudApiConfig(provider: String) {
+    runBlocking {
+      dataStore.updateData { settings ->
+        val filteredConfigs = settings.cloudApiConfigsList.filter { it.provider != provider }
+        settings.toBuilder().clearCloudApiConfigs().addAllCloudApiConfigs(filteredConfigs).build()
+      }
+    }
+  }
+
+  override fun updateCloudApiConnectionStatus(provider: String, isConnected: Boolean) {
+    runBlocking {
+      dataStore.updateData { settings ->
+        val currentConfigs = settings.cloudApiConfigsList.toMutableList()
+        val existingIndex = currentConfigs.indexOfFirst { it.provider == provider }
+        if (existingIndex >= 0) {
+          val updatedConfig = currentConfigs[existingIndex].toBuilder().setIsConnected(isConnected).build()
+          currentConfigs[existingIndex] = updatedConfig
+        }
+        settings.toBuilder().clearCloudApiConfigs().addAllCloudApiConfigs(currentConfigs).build()
+      }
     }
   }
 }

@@ -58,12 +58,14 @@ import androidx.compose.ui.unit.dp
 import com.google.ai.edge.gallery.R
 import com.google.ai.edge.gallery.data.Model
 import com.google.ai.edge.gallery.data.Task
+import com.google.ai.edge.gallery.data.CloudModelDefinitions
 import com.google.ai.edge.gallery.ui.common.ClickableLink
 import com.google.ai.edge.gallery.ui.common.RevealingText
 import com.google.ai.edge.gallery.ui.common.TaskIcon
 import com.google.ai.edge.gallery.ui.common.getTaskBgColor
 import com.google.ai.edge.gallery.ui.common.getTaskBgGradientColors
 import com.google.ai.edge.gallery.ui.common.modelitem.ModelItem
+import com.google.ai.edge.gallery.ui.common.modelitem.CloudModelItem
 import com.google.ai.edge.gallery.ui.common.rememberDelayedAnimationProgress
 import com.google.ai.edge.gallery.ui.theme.bodyLargeNarrow
 import com.google.ai.edge.gallery.ui.theme.headlineLargeMedium
@@ -83,6 +85,7 @@ fun ModelList(
   modelManagerViewModel: ModelManagerViewModel,
   contentPadding: PaddingValues,
   onModelClicked: (Model) -> Unit,
+  onApiKeyClicked: (Model) -> Unit = {},
   modifier: Modifier = Modifier,
 ) {
   // This is just to update "models" list when task.updateTrigger is updated so that the UI can
@@ -109,6 +112,10 @@ fun ModelList(
         }
       }
     }
+
+  val cloudModels = remember {
+    CloudModelDefinitions.CLOUD_MODELS
+  }
 
   val listState = rememberLazyListState()
 
@@ -309,6 +316,40 @@ fun ModelList(
               },
           )
         }
+      }
+
+      // Title for cloud models
+      if (cloudModels.isNotEmpty()) {
+        item(key = "cloudModelsTitle") {
+          Text(
+            "Cloud Models",
+            color = MaterialTheme.colorScheme.onSurface,
+            style = MaterialTheme.typography.labelLarge,
+            modifier =
+              Modifier.padding(horizontal = 16.dp)
+                .padding(top = 32.dp, bottom = 8.dp)
+                .graphicsLayer {
+                  alpha = modelListProgress
+                  translationY = (CONTENT_ANIMATION_OFFSET * (1 - modelListProgress)).toPx()
+                },
+          )
+        }
+      }
+
+      // List of cloud models within a task.
+      items(items = cloudModels, key = { it.name }) { model ->
+        CloudModelItem(
+          model = model,
+          task = task,
+          modelManagerViewModel = modelManagerViewModel,
+          onModelClicked = onModelClicked,
+          onApiKeyClicked = onApiKeyClicked,
+          modifier =
+            Modifier.graphicsLayer {
+              alpha = modelListProgress
+              translationY = (CONTENT_ANIMATION_OFFSET * (1 - modelListProgress)).toPx()
+            },
+        )
       }
 
       item(key = "paddingBottom") { Spacer(modifier = Modifier.height(40.dp)) }

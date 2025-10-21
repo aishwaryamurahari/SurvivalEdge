@@ -181,4 +181,14 @@
   <string name="cd_switch_to_keyboard">Switch to keyboard</string>
   <!-- Content description spoken when the "switch to voice" icon is focused. [CHAR_LIMIT=NONE] -->
   <string name="cd_switch_to_voice">Switch to voice</string>
+
+  <!-- Cloud model related strings -->
+  <string name="cloud_models" translatable="false">Cloud Models</string>
+  <string name="connect" translatable="false">Connect</string>
+  <string name="connected" translatable="false">Connected</string>
+  <string name="not_connected" translatable="false">Not connected</string>
+  <string name="api_key" translatable="false">API Key</string>
+  <string name="enter_api_key" translatable="false">Enter your API key to use %s</string>
+  <string name="api_settings" translatable="false">API Settings</string>
+  <string name="cloud_model_requires_api_key" translatable="false">This cloud model requires an API key</string>
 </resources>
