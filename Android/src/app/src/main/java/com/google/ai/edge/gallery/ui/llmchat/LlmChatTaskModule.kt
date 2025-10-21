@@ -37,9 +37,13 @@ import dagger.multibindings.IntoSet
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineScope
 
-////////////////////////////////////////////////////////////////////////////////////////////////////
-// AI Chat.
+// Import LlmAskImageScreen function
+import com.google.ai.edge.gallery.ui.llmchat.LlmAskImageScreen
 
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// AI Chat - COMMENTED OUT (not needed for Ask Image only app)
+
+/*
 class LlmChatTask @Inject constructor() : CustomTask {
   override val task: Task =
     Task(
@@ -95,6 +99,7 @@ internal object LlmChatTaskModule {
     return LlmChatTask()
   }
 }
+*/
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // Survival Edge.
@@ -159,8 +164,9 @@ internal object LlmAskImageModule {
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-// Ask audio.
+// Ask audio - COMMENTED OUT (not needed for Ask Image only app)
 
+/*
 class LlmAskAudioTask @Inject constructor() : CustomTask {
   override val task: Task =
     Task(
@@ -220,3 +226,4 @@ internal object LlmAskAudioModule {
     return LlmAskAudioTask()
   }
 }
+*/

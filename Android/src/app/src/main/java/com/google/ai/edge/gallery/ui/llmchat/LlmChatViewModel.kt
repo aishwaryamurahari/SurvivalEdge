@@ -14,6 +14,11 @@
  * limitations under the License.
  */
 
+/*
+ * COMMENTED OUT - LlmChatViewModel is not needed for Ask Image only app
+ * This file can be safely removed after testing
+ */
+
 package com.google.ai.edge.gallery.ui.llmchat
 
 import android.content.Context
@@ -271,8 +276,16 @@ open class LlmChatViewModelBase() : ChatViewModel() {
   }
 }
 
+/*
+ * COMMENTED OUT - LlmChatViewModel and LlmAskAudioViewModel are not needed for Ask Image only app
+ */
+
+/*
 @HiltViewModel class LlmChatViewModel @Inject constructor() : LlmChatViewModelBase()
+*/
 
 @HiltViewModel class LlmAskImageViewModel @Inject constructor() : LlmChatViewModelBase()
 
+/*
 @HiltViewModel class LlmAskAudioViewModel @Inject constructor() : LlmChatViewModelBase()
+*/

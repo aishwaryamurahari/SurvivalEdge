@@ -14,6 +14,11 @@
  * limitations under the License.
  */
 
+/*
+ * PARTIALLY COMMENTED - Only LlmAskImageScreen is needed for Ask Image only app
+ * LlmChatScreen and LlmAskAudioScreen are commented out
+ */
+
 package com.google.ai.edge.gallery.ui.llmchat
 
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -30,22 +35,11 @@ import com.google.ai.edge.gallery.ui.common.chat.ChatMessageImage
 import com.google.ai.edge.gallery.ui.common.chat.ChatMessageText
 import com.google.ai.edge.gallery.ui.common.chat.ChatView
 import com.google.ai.edge.gallery.ui.modelmanager.ModelManagerViewModel
+import com.google.ai.edge.gallery.ui.llmchat.LlmChatViewModelBase
 
-@Composable
-fun LlmChatScreen(
-  modelManagerViewModel: ModelManagerViewModel,
-  navigateUp: () -> Unit,
-  modifier: Modifier = Modifier,
-  viewModel: LlmChatViewModel = hiltViewModel(),
-) {
-  ChatViewWrapper(
-    viewModel = viewModel,
-    modelManagerViewModel = modelManagerViewModel,
-    taskId = BuiltInTaskId.LLM_CHAT,
-    navigateUp = navigateUp,
-    modifier = modifier,
-  )
-}
+/*
+ * COMMENTED OUT - LlmChatScreen and LlmAskAudioScreen are not needed for Ask Image only app
+ */
 
 @Composable
 fun LlmAskImageScreen(
@@ -63,21 +57,38 @@ fun LlmAskImageScreen(
   )
 }
 
-@Composable
-fun LlmAskAudioScreen(
-  modelManagerViewModel: ModelManagerViewModel,
-  navigateUp: () -> Unit,
-  modifier: Modifier = Modifier,
-  viewModel: LlmAskAudioViewModel = hiltViewModel(),
-) {
-  ChatViewWrapper(
-    viewModel = viewModel,
-    modelManagerViewModel = modelManagerViewModel,
-    taskId = BuiltInTaskId.LLM_ASK_AUDIO,
-    navigateUp = navigateUp,
-    modifier = modifier,
-  )
-}
+
+// @Composable
+// fun LlmChatScreen(
+//   modelManagerViewModel: ModelManagerViewModel,
+//   navigateUp: () -> Unit,
+//   modifier: Modifier = Modifier,
+//   viewModel: LlmChatViewModel = hiltViewModel(),
+// ) {
+//   ChatViewWrapper(
+//     viewModel = viewModel,
+//     modelManagerViewModel = modelManagerViewModel,
+//     taskId = BuiltInTaskId.LLM_CHAT,
+//     navigateUp = navigateUp,
+//     modifier = modifier,
+//   )
+// }
+
+// @Composable
+// fun LlmAskAudioScreen(
+//   modelManagerViewModel: ModelManagerViewModel,
+//   navigateUp: () -> Unit,
+//   modifier: Modifier = Modifier,
+//   viewModel: LlmAskAudioViewModel = hiltViewModel(),
+// ) {
+//   ChatViewWrapper(
+//     viewModel = viewModel,
+//     modelManagerViewModel = modelManagerViewModel,
+//     taskId = BuiltInTaskId.LLM_ASK_AUDIO,
+//     navigateUp = navigateUp,
+//     modifier = modifier,
+//   )
+// }
 
 @Composable
 fun ChatViewWrapper(
@@ -101,7 +112,7 @@ fun ChatViewWrapper(
 
       var text = ""
       val images: MutableList<Bitmap> = mutableListOf()
-      val audioMessages: MutableList<ChatMessageAudioClip> = mutableListOf()
+     // val audioMessages: MutableList<ChatMessageAudioClip> = mutableListOf()
       var chatMessageText: ChatMessageText? = null
       for (message in messages) {
         if (message is ChatMessageText) {
@@ -109,17 +120,19 @@ fun ChatViewWrapper(
           text = message.content
         } else if (message is ChatMessageImage) {
           images.addAll(message.bitmaps)
-        } else if (message is ChatMessageAudioClip) {
-          audioMessages.add(message)
-        }
+         }
+        //else if (message is ChatMessageAudioClip) {
+        //   audioMessages.add(message)
+        // }
       }
-      if ((text.isNotEmpty() && chatMessageText != null) || audioMessages.isNotEmpty()) {
+      //if ((text.isNotEmpty() && chatMessageText != null) || audioMessages.isNotEmpty()) {
+      if ((text.isNotEmpty() && chatMessageText != null)) {
         modelManagerViewModel.addTextInputHistory(text)
         viewModel.generateResponse(
           model = model,
           input = text,
           images = images,
-          audioMessages = audioMessages,
+         // audioMessages = audioMessages,
           onError = {
             viewModel.handleError(
               context = context,
@@ -162,3 +175,4 @@ fun ChatViewWrapper(
     modifier = modifier,
   )
 }
+
