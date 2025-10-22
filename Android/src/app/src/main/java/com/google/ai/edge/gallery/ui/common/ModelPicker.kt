@@ -58,6 +58,7 @@ import com.google.ai.edge.gallery.data.Task
 import com.google.ai.edge.gallery.ui.common.modelitem.StatusIcon
 import com.google.ai.edge.gallery.ui.modelmanager.ModelManagerViewModel
 import com.google.ai.edge.gallery.ui.llmchat.CloudModelHelper
+import com.google.ai.edge.gallery.data.CloudModelDefinitions
 import com.google.ai.edge.gallery.ui.theme.labelSmallNarrow
 
 @Composable
@@ -94,7 +95,7 @@ fun ModelPicker(
 
     // Model list (local models + cloud models)
     val allModels = remember {
-      task.models  // Cloud models are now included in task.models
+      task.models + CloudModelDefinitions.CLOUD_MODELS  // Cloud models are now included in task.models
     }
 
     for (model in allModels) {

@@ -101,7 +101,7 @@ fun ModelList(
       derivedStateOf {
         val trigger = task.updateTrigger.value
         if (trigger >= 0) {
-          task.models.toList().filter { !it.imported }
+          task.models.toList().filter { !it.imported && !it.isCloudModel }
         } else {
           listOf()
         }
