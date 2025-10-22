@@ -66,8 +66,8 @@
   <string name="tos_dialog_view_full_tos" translatable="false">View this app\'s Terms of Service</string>
   <string name="tos_dialog_view_accept_button_label" translatable="false">Accept and Continue</string>
   <string name="try_it" translatable="false">Try it</string>
-  <string name="run_again" translatable="false">Run again</string>
-  <string name="benchmark" translatable="false">Run benchmark</string>
+  <!-- <string name="run_again" translatable="false">Run again</string>
+  <string name="benchmark" translatable="false">Run benchmark</string> -->
   <string name="warming_up" translatable="false">warming up…</string>
   <string name="running" translatable="false">running</string>
   <string name="enter_instruction" translatable="false">Enter instruction</string>

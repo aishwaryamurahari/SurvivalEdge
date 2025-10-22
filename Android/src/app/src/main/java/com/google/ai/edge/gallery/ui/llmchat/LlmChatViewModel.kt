@@ -85,6 +85,8 @@ open class LlmChatViewModelBase() : ChatViewModel() {
           var firstRun = true
           var timeToFirstToken = 0f
           var firstTokenTs = 0L
+          var decodeTokens = 0
+          var decodeSpeed = 0f
           val start = System.currentTimeMillis()
 
           CloudModelHelper.runInference(
@@ -99,6 +101,9 @@ open class LlmChatViewModelBase() : ChatViewModel() {
                 timeToFirstToken = (firstTokenTs - start) / 1000f
                 firstRun = false
                 setPreparing(false)
+              } else {
+                // Count tokens for decode speed calculation
+                decodeTokens += partialResult.length / 4 // Rough estimation
               }
 
               // Remove the last message if it is a "loading" message.
@@ -121,6 +126,35 @@ open class LlmChatViewModelBase() : ChatViewModel() {
 
               if (done) {
                 setInProgress(false)
+
+                // Calculate decode speed for cloud models
+                val decodeSpeed = if (firstTokenTs > 0 && decodeTokens > 0) {
+                  decodeTokens / ((System.currentTimeMillis() - firstTokenTs) / 1000f)
+                } else 0f
+
+                // Create and attach benchmark result for cloud models
+                val lastMessage = getLastMessage(model = model)
+                if (lastMessage is ChatMessageText) {
+                  val inputTokens = input.length / 4
+                  val prefillSpeed = inputTokens / timeToFirstToken
+
+                  updateLastTextMessageLlmBenchmarkResult(
+                    model = model,
+                    llmBenchmarkResult = ChatMessageBenchmarkLlmResult(
+                      orderedStats = STATS,
+                      statValues = mutableMapOf(
+                        "prefill_speed" to prefillSpeed,
+                       // "prefill_speed" to 50f, Estimated for cloud models
+                        "decode_speed" to decodeSpeed,
+                        "time_to_first_token" to timeToFirstToken,
+                        "latency" to (System.currentTimeMillis() - start).toFloat() / 1000f,
+                      ),
+                      running = false,
+                      latencyMs = -1f,
+                      accelerator = accelerator,
+                    ),
+                  )
+                }
               }
             },
             cleanUpListener = {
