@@ -69,14 +69,17 @@ open class LlmChatViewModelBase() : ChatViewModel() {
       // Loading.
       addMessage(model = model, message = ChatMessageLoading(accelerator = accelerator))
 
-      // Wait for instance to be initialized.
-      while (model.instance == null) {
-        delay(100)
-      }
-      delay(500)
-
       // Check if it's a cloud model
       if (model.isCloudModel) {
+        // For cloud models, check if instance exists, if not initialize it
+        if (model.instance == null) {
+          // Cloud model not initialized - this should not happen if ModelPicker works correctly
+          Log.e(TAG, "Cloud model not initialized: ${model.name}")
+          setInProgress(false)
+          setPreparing(false)
+          onError()
+          return@launch
+        }
         // Handle cloud model inference
         try {
           var firstRun = true
@@ -132,6 +135,12 @@ open class LlmChatViewModelBase() : ChatViewModel() {
           onError()
         }
       } else {
+        // For local models, wait for instance to be initialized
+        while (model.instance == null) {
+          delay(100)
+        }
+        delay(500)
+
         // Handle local model inference (existing code)
         val instance = model.instance as LlmModelInstance
         var prefillTokens = images.size * 257

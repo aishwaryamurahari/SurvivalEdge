@@ -40,6 +40,10 @@ object CloudModelHelper {
     onDone: (String) -> Unit,
   ) {
     try {
+
+      if (model.instance != null) {
+          cleanUp(model) { }
+      }
       when (model.cloudProvider) {
         "openai" -> {
           val apiService = OpenAiApiService()
@@ -47,7 +51,7 @@ object CloudModelHelper {
           model.instance = CloudModelInstance(
             provider = model.cloudProvider,
             modelName = model.cloudModelName,
-            apiKey = apiKey,
+            apiKey = apiKey.trim(),
             isConnected = true
           )
         }
@@ -76,7 +80,22 @@ object CloudModelHelper {
     try {
       when (instance.provider) {
         "openai" -> {
-          val messages = apiService.createMessageWithImage(input, images)
+          val messages = if (images.isNotEmpty()) {
+            apiService.createMessageWithImage(input, images)
+          } else {
+            // Use text-only message for LLM Single Turn
+            listOf(
+              com.google.ai.edge.gallery.api.OpenAiMessage(
+                role = "user",
+                content = listOf(
+                  com.google.ai.edge.gallery.api.OpenAiContent(
+                    type = "text",
+                    text = input
+                  )
+                )
+              )
+            )
+          }
 
           // Run streaming inference in a coroutine
           kotlinx.coroutines.runBlocking {

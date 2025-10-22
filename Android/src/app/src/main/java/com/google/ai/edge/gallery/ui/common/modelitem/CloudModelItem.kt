@@ -58,6 +58,7 @@ import androidx.compose.ui.unit.dp
 import com.google.ai.edge.gallery.R
 import com.google.ai.edge.gallery.data.Model
 import com.google.ai.edge.gallery.data.Task
+import com.google.ai.edge.gallery.ui.common.DownloadAndTryButton
 import com.google.ai.edge.gallery.ui.common.MarkdownText
 import com.google.ai.edge.gallery.ui.modelmanager.ModelManagerViewModel
 import com.google.ai.edge.gallery.ui.theme.customColors
@@ -147,28 +148,20 @@ fun CloudModelItem(
           }
 
           // Action buttons
-          Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-          ) {
-            if (isConnected) {
-              Button(
-                onClick = { onModelClicked(model) },
-                colors = ButtonDefaults.buttonColors(
-                  containerColor = MaterialTheme.colorScheme.primary
-                )
-              ) {
-                Text("Try it")
-              }
-            } else {
-              OutlinedButton(
-                onClick = { onApiKeyClicked(model) }
-              ) {
-                Text("Connect")
-              }
-            }
-          }
+          DownloadAndTryButton(
+            task = task,
+            model = model,
+            enabled = true,
+            downloadStatus = null, // Cloud models don't have download status
+            modelManagerViewModel = modelManagerViewModel,
+            onClicked = { onModelClicked(model) },
+            onApiKeyClicked = onApiKeyClicked,
+            compact = false,
+            canShowTryIt = true
+          )
         }
       }
     }
   }
 }
+

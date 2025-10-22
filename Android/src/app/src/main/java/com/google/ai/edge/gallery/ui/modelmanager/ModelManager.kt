@@ -39,6 +39,7 @@ import com.google.ai.edge.gallery.data.AppBarAction
 import com.google.ai.edge.gallery.data.AppBarActionType
 import com.google.ai.edge.gallery.data.Model
 import com.google.ai.edge.gallery.data.Task
+import com.google.ai.edge.gallery.data.CloudModelDefinitions
 import com.google.ai.edge.gallery.ui.common.ApiKeyDialog
 
 /** A screen to manage models. */
@@ -56,6 +57,13 @@ fun ModelManager(
   // Dialog state management
   var showApiKeyDialog by remember { mutableStateOf(false) }
   var selectedModelForApiKey by remember { mutableStateOf<Model?>(null) }
+
+  // Create a modified task that includes cloud models
+  val taskWithCloudModels = remember(task) {
+    task.copy(
+      models = (task.models + CloudModelDefinitions.CLOUD_MODELS).toMutableList()
+    )
+  }
 
   // Set title based on the task.
   val title = task.label
@@ -90,6 +98,8 @@ fun ModelManager(
   // API key save handler
   val onApiKeySaved = { apiKey: String ->
     selectedModelForApiKey?.let { model ->
+      model.instance = null
+
       viewModel.saveCloudApiConfig(
         provider = model.cloudProvider,
         apiKey = apiKey,
@@ -111,7 +121,7 @@ fun ModelManager(
     },
   ) { innerPadding ->
     ModelList(
-      task = task,
+      task = taskWithCloudModels,
       modelManagerViewModel = viewModel,
       contentPadding = innerPadding,
       onModelClicked = onModelClicked,

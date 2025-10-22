@@ -51,12 +51,13 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import android.util.Log
 import com.google.ai.edge.gallery.R
 import com.google.ai.edge.gallery.data.Model
 import com.google.ai.edge.gallery.data.Task
-import com.google.ai.edge.gallery.data.CloudModelDefinitions
 import com.google.ai.edge.gallery.ui.common.modelitem.StatusIcon
 import com.google.ai.edge.gallery.ui.modelmanager.ModelManagerViewModel
+import com.google.ai.edge.gallery.ui.llmchat.CloudModelHelper
 import com.google.ai.edge.gallery.ui.theme.labelSmallNarrow
 
 @Composable
@@ -93,7 +94,7 @@ fun ModelPicker(
 
     // Model list (local models + cloud models)
     val allModels = remember {
-      task.models + CloudModelDefinitions.CLOUD_MODELS
+      task.models  // Cloud models are now included in task.models
     }
 
     for (model in allModels) {
@@ -109,7 +110,25 @@ fun ModelPicker(
                 val cloudConfig = modelManagerUiState.cloudApiConfigs.find { it.provider == model.cloudProvider }
                 val isConnected = cloudConfig?.isConnected ?: false
                 if (isConnected) {
-                  onModelSelected(model)
+                  // Initialize cloud model before selecting if not already initialized
+                  if (model.instance == null) {
+                    CloudModelHelper.initialize(
+                      context = context,
+                      model = model,
+                      apiKey = cloudConfig.apiKey,
+                      onDone = { error ->
+                        if (error.isEmpty()) {
+                          onModelSelected(model)
+                        } else {
+                          Log.e("ModelPicker", "Failed to initialize cloud model: $error")
+                          // Still select the model, let chat handle the error
+                          onModelSelected(model)
+                        }
+                      }
+                    )
+                  } else {
+                    onModelSelected(model)
+                  }
                 } else {
                   // Cloud model not connected - this should be handled by the parent
                   // For now, just select the model (parent should handle API key flow)

@@ -42,6 +42,8 @@ import com.google.ai.edge.gallery.data.TMP_FILE_EXT
 import com.google.ai.edge.gallery.data.Task
 import com.google.ai.edge.gallery.data.createLlmChatConfigs
 import com.google.ai.edge.gallery.proto.AccessTokenData
+import com.google.ai.edge.gallery.ui.llmchat.CloudModelHelper
+import com.google.ai.edge.gallery.data.CloudModelDefinitions
 import com.google.ai.edge.gallery.proto.CloudApiConfig
 import com.google.ai.edge.gallery.proto.ImportedModel
 import com.google.ai.edge.gallery.proto.Theme
@@ -175,7 +177,19 @@ constructor(
     return customTasks.find { it.task.id == id }
   }
 
+  // fun getModelByName(name: String): Model? {
+  //   for (task in uiState.value.tasks) {
+  //     for (model in task.models) {
+  //       if (model.name == name) {
+  //         return model
+  //       }
+  //     }
+  //   }
+  //   return null
+  // }
+
   fun getModelByName(name: String): Model? {
+    // First search in regular task models
     for (task in uiState.value.tasks) {
       for (model in task.models) {
         if (model.name == name) {
@@ -183,6 +197,14 @@ constructor(
         }
       }
     }
+
+    // Then search in cloud models
+    for (cloudModel in CloudModelDefinitions.CLOUD_MODELS) {
+      if (cloudModel.name == name) {
+        return cloudModel
+      }
+    }
+
     return null
   }
 
@@ -331,14 +353,32 @@ constructor(
         }
       }
 
-      // Call the model initialization function.
-      getCustomTaskByTaskId(id = task.id)
-        ?.initializeModelFn(
-          context = context,
-          coroutineScope = viewModelScope,
-          model = model,
-          onDone = onDone,
-        )
+      // Handle cloud models differently
+      if (model.isCloudModel) {
+        // For cloud models, get the API key from stored config
+        val cloudConfig = uiState.value.cloudApiConfigs.find {
+          it.provider == model.cloudProvider
+        }
+        if (cloudConfig?.isConnected == true) {
+          CloudModelHelper.initialize(
+            context = context,
+            model = model,
+            apiKey = cloudConfig.apiKey,
+            onDone = onDone
+          )
+        } else {
+          onDone("Cloud model not connected. Please configure API key first.")
+        }
+      } else {
+        // Call the model initialization function for local models
+        getCustomTaskByTaskId(id = task.id)
+          ?.initializeModelFn(
+            context = context,
+            coroutineScope = viewModelScope,
+            model = model,
+            onDone = onDone,
+          )
+      }
     }
   }
 
@@ -943,6 +983,16 @@ constructor(
   private fun getModelDownloadStatus(model: Model): ModelDownloadStatus {
     Log.d(TAG, "Checking model ${model.name} download status...")
 
+    // For cloud models, they don't need to be downloaded
+    if (model.isCloudModel) {
+      Log.d(TAG, "Model ${model.name} is a cloud model. Set status to SUCCEEDED")
+      return ModelDownloadStatus(
+        status = ModelDownloadStatusType.SUCCEEDED,
+        totalBytes = 0L,
+        receivedBytes = 0L
+      )
+    }
+
     if (model.localFileRelativeDirPathOverride.isNotEmpty()) {
       Log.d(TAG, "Model has localFileRelativeDirPathOverride set. Set status to SUCCEEDED")
       return ModelDownloadStatus(
@@ -1048,7 +1098,7 @@ constructor(
     viewModelScope.launch {
       val config = CloudApiConfig.newBuilder()
         .setProvider(provider)
-        .setApiKey(apiKey)
+        .setApiKey(apiKey.trim())
         .setModelName(modelName)
         .setIsConnected(true)
         .build()
@@ -1077,7 +1127,7 @@ constructor(
       com.google.ai.edge.gallery.ui.llmchat.CloudModelHelper.initialize(
         context = context,
         model = model,
-        apiKey = apiKey,
+        apiKey = apiKey.trim(),
         onDone = { error ->
           if (error.isEmpty()) {
             // Model initialized successfully

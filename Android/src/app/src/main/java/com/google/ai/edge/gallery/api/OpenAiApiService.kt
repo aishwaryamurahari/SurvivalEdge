@@ -73,6 +73,11 @@ class OpenAiApiService {
     maxTokens: Int = 1000,
     temperature: Float = 0.7f
   ): Flow<String> = flow {
+    val trimmedApiKey = apiKey.trim()
+    if (trimmedApiKey.isEmpty() || !trimmedApiKey.startsWith("sk-")) {
+        throw Exception("Invalid API key format")
+    }
+
     val requestBody = OpenAiRequest(
       model = model,
       messages = messages,
@@ -85,7 +90,7 @@ class OpenAiApiService {
 
     val request = Request.Builder()
       .url("$baseUrl/chat/completions")
-      .addHeader("Authorization", "Bearer $apiKey")
+      .addHeader("Authorization", "Bearer ${apiKey.trim()}")
       .addHeader("Content-Type", "application/json")
       .post(requestBody.toRequestBody("application/json".toMediaType()))
       .build()
@@ -149,3 +154,4 @@ class OpenAiApiService {
     return Base64.encodeToString(byteArray, Base64.DEFAULT)
   }
 }
+

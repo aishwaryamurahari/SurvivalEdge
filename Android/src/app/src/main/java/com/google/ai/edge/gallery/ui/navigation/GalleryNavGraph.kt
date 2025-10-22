@@ -145,42 +145,42 @@ fun GalleryNavHost(
   }
 
   // Auto-redirect to Ask Image task
-  //LaunchedEffect(Unit) {
-    // Wait for tasks to be loaded
-    //val tasks = modelManagerViewModel.uiState.value.tasks
-    //if (tasks.isNotEmpty()) {
-    //  val askImageTask = modelManagerViewModel.getTaskById(BuiltInTaskId.LLM_ASK_IMAGE)
-      //if (askImageTask != null) {
-        //pickedTask = askImageTask
-        //showModelManager = true
-        //firebaseAnalytics?.logEvent("capability_select", bundleOf("capability_name" to askImageTask.id))
-     // }
-    //}
-  //}
+  // LaunchedEffect(Unit) {
+  //  // Wait for tasks to be loaded
+  //   val tasks = modelManagerViewModel.uiState.value.tasks
+  //   if (tasks.isNotEmpty()) {
+  //    val askImageTask = modelManagerViewModel.getTaskById(BuiltInTaskId.LLM_ASK_IMAGE)
+  //     if (askImageTask != null) {
+  //       pickedTask = askImageTask
+  //       showModelManager = true
+  //       firebaseAnalytics?.logEvent("capability_select", bundleOf("capability_name" to askImageTask.id))
+  //    }
+  //   }
+  // }
 
-  LaunchedEffect(Unit) {
-    // Wait for tasks to be loaded
-    val tasks = modelManagerViewModel.uiState.value.tasks
-    if (tasks.isNotEmpty()) {
-      val askImageTask = modelManagerViewModel.getTaskById(BuiltInTaskId.LLM_ASK_IMAGE)
-      if (askImageTask != null) {
-        pickedTask = askImageTask
-        showModelManager = true
-        firebaseAnalytics?.logEvent("capability_select", bundleOf("capability_name" to askImageTask.id))
-      }
-    }
-  }
+  // LaunchedEffect(Unit) {
+  //   // Wait for tasks to be loaded
+  //   val tasks = modelManagerViewModel.uiState.value.tasks
+  //   if (tasks.isNotEmpty()) {
+  //     val askImageTask = modelManagerViewModel.getTaskById(BuiltInTaskId.LLM_ASK_IMAGE)
+  //     if (askImageTask != null) {
+  //       pickedTask = askImageTask
+  //       showModelManager = true
+  //       firebaseAnalytics?.logEvent("capability_select", bundleOf("capability_name" to askImageTask.id))
+  //     }
+  //   }
+  // }
 
   // Hide HomeScreen since we auto-redirect to Ask Image
-  // HomeScreen(
-  //   modelManagerViewModel = modelManagerViewModel,
-  //   tosViewModel = hiltViewModel(),
-  //   navigateToTaskScreen = { task ->
-  //     pickedTask = task
-  //     showModelManager = true
-  //     firebaseAnalytics?.logEvent("capability_select", bundleOf("capability_name" to task.id))
-  //   },
-  // )
+  HomeScreen(
+    modelManagerViewModel = modelManagerViewModel,
+    tosViewModel = hiltViewModel(),
+    navigateToTaskScreen = { task ->
+      pickedTask = task
+      showModelManager = true
+      firebaseAnalytics?.logEvent("capability_select", bundleOf("capability_name" to task.id))
+    },
+  )
 
   // Model manager.
   AnimatedVisibility(
@@ -366,7 +366,8 @@ private fun CustomTaskScreen(
     ) {
       val curModelDownloadStatus = modelManagerUiState.modelDownloadStatus[selectedModel.name]
       AnimatedContent(
-        targetState = curModelDownloadStatus?.status == ModelDownloadStatusType.SUCCEEDED
+        //targetState = curModelDownloadStatus?.status == ModelDownloadStatusType.SUCCEEDED
+        targetState = curModelDownloadStatus?.status == ModelDownloadStatusType.SUCCEEDED || selectedModel.isCloudModel
       ) { targetState ->
         when (targetState) {
           // Main UI when model is downloaded.

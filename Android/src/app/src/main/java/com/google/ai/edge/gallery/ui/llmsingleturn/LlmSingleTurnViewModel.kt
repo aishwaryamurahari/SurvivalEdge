@@ -24,6 +24,7 @@ import com.google.ai.edge.gallery.data.Model
 import com.google.ai.edge.gallery.data.Task
 import com.google.ai.edge.gallery.ui.common.chat.ChatMessageBenchmarkLlmResult
 import com.google.ai.edge.gallery.ui.common.chat.Stat
+import com.google.ai.edge.gallery.ui.llmchat.CloudModelHelper
 import com.google.ai.edge.gallery.ui.llmchat.LlmChatModelHelper
 import com.google.ai.edge.gallery.ui.llmchat.LlmModelInstance
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -79,94 +80,180 @@ class LlmSingleTurnViewModel @Inject constructor() : ViewModel() {
         delay(100)
       }
 
-      val supportImage =
-        model.llmSupportImage &&
-          task.id == com.google.ai.edge.gallery.data.BuiltInTaskId.LLM_ASK_IMAGE
-      val supportAudio =
-        model.llmSupportAudio &&
-          task.id == com.google.ai.edge.gallery.data.BuiltInTaskId.LLM_ASK_AUDIO
-      LlmChatModelHelper.resetConversation(
-        model = model,
-        supportImage = supportImage,
-        supportAudio = supportAudio,
-      )
-      delay(500)
+      if (model.isCloudModel) {
+        // Handle cloud model inference
+        runCloudInference(model, input)
+      } else {
+        // Handle local model inference (existing logic)
+        runLocalInference(task, model, input)
+      }
+    }
+  }
 
-      // Run inference.
-      val instance = model.instance as LlmModelInstance
-      var firstRun = true
-      var timeToFirstToken = 0f
-      var firstTokenTs = 0L
-      var decodeTokens = 0
-      var prefillSpeed = 0f
-      var decodeSpeed: Float
-      val start = System.currentTimeMillis()
-      var response = ""
-      var lastBenchmarkUpdateTs = 0L
-      LlmChatModelHelper.runInference(
-        model = model,
-        input = input,
-        resultListener = { partialResult, done ->
-          val curTs = System.currentTimeMillis()
+  private suspend fun runCloudInference(model: Model, input: String) {
+    val start = System.currentTimeMillis()
+    var firstTokenTs = 0L
+    var timeToFirstToken = 0f
+    var decodeTokens = 0
+    var prefillSpeed = 0f
+    var decodeSpeed: Float
+    var response = ""
+    var firstRun = true
+    var lastBenchmarkUpdateTs = 0L
 
-          if (firstRun) {
-            setPreparing(false)
-            firstTokenTs = System.currentTimeMillis()
-            timeToFirstToken = (firstTokenTs - start) / 1000f
-            val prefillTokens = instance.conversation.getBenchmarkInfo().lastPrefillTokenCount
-            prefillSpeed = prefillTokens / timeToFirstToken
-            firstRun = false
-          } else {
-            decodeTokens++
+    CloudModelHelper.runInference(
+      model = model,
+      input = input,
+      resultListener = { partialResult, done ->
+        val curTs = System.currentTimeMillis()
+
+        if (firstRun) {
+          setPreparing(false)
+          firstTokenTs = System.currentTimeMillis()
+          timeToFirstToken = (firstTokenTs - start) / 1000f
+          // For cloud models, we can't get prefill tokens, so estimate
+          prefillSpeed = 50f // Estimated tokens per second for prefill
+          firstRun = false
+        } else {
+          decodeTokens++
+        }
+
+        // Incrementally update the streamed partial results.
+        response = processLlmResponse(response = "$response$partialResult")
+
+        // Update response.
+        updateResponse(
+          model = model,
+          promptTemplateType = uiState.value.selectedPromptTemplateType,
+          response = response,
+        )
+
+        // Update benchmark (with throttling).
+        if (curTs - lastBenchmarkUpdateTs > 200) {
+          decodeSpeed = decodeTokens / ((curTs - firstTokenTs) / 1000f)
+          if (decodeSpeed.isNaN()) {
+            decodeSpeed = 0f
           }
-
-          // Incrementally update the streamed partial results.
-          response = processLlmResponse(response = "$response$partialResult")
-
-          // Update response.
-          updateResponse(
+          val benchmark =
+            ChatMessageBenchmarkLlmResult(
+              orderedStats = STATS,
+              statValues =
+                mutableMapOf(
+                  "prefill_speed" to prefillSpeed,
+                  "decode_speed" to decodeSpeed,
+                  "time_to_first_token" to timeToFirstToken,
+                  "latency" to (curTs - start).toFloat() / 1000f,
+                ),
+              running = !done,
+              latencyMs = -1f,
+            )
+          updateBenchmark(
             model = model,
             promptTemplateType = uiState.value.selectedPromptTemplateType,
-            response = response,
+            benchmark = benchmark,
           )
+          lastBenchmarkUpdateTs = curTs
+        }
 
-          // Update benchmark (with throttling).
-          if (curTs - lastBenchmarkUpdateTs > 200) {
-            decodeSpeed = decodeTokens / ((curTs - firstTokenTs) / 1000f)
-            if (decodeSpeed.isNaN()) {
-              decodeSpeed = 0f
-            }
-            val benchmark =
-              ChatMessageBenchmarkLlmResult(
-                orderedStats = STATS,
-                statValues =
-                  mutableMapOf(
-                    "prefill_speed" to prefillSpeed,
-                    "decode_speed" to decodeSpeed,
-                    "time_to_first_token" to timeToFirstToken,
-                    "latency" to (curTs - start).toFloat() / 1000f,
-                  ),
-                running = !done,
-                latencyMs = -1f,
-              )
-            updateBenchmark(
-              model = model,
-              promptTemplateType = uiState.value.selectedPromptTemplateType,
-              benchmark = benchmark,
-            )
-            lastBenchmarkUpdateTs = curTs
-          }
-
-          if (done) {
-            setInProgress(false)
-          }
-        },
-        cleanUpListener = {
-          setPreparing(false)
+        if (done) {
           setInProgress(false)
-        },
-      )
-    }
+        }
+      },
+      cleanUpListener = {
+        setPreparing(false)
+        setInProgress(false)
+      }
+    )
+  }
+
+  private suspend fun runLocalInference(task: Task, model: Model, input: String) {
+    val supportImage =
+      model.llmSupportImage &&
+        task.id == com.google.ai.edge.gallery.data.BuiltInTaskId.LLM_ASK_IMAGE
+    val supportAudio =
+      model.llmSupportAudio &&
+        task.id == com.google.ai.edge.gallery.data.BuiltInTaskId.LLM_ASK_AUDIO
+    LlmChatModelHelper.resetConversation(
+      model = model,
+      supportImage = supportImage,
+      supportAudio = supportAudio,
+    )
+    delay(500)
+
+    // Run inference.
+    val instance = model.instance as LlmModelInstance
+    var firstRun = true
+    var timeToFirstToken = 0f
+    var firstTokenTs = 0L
+    var decodeTokens = 0
+    var prefillSpeed = 0f
+    var decodeSpeed: Float
+    val start = System.currentTimeMillis()
+    var response = ""
+    var lastBenchmarkUpdateTs = 0L
+    LlmChatModelHelper.runInference(
+      model = model,
+      input = input,
+      resultListener = { partialResult, done ->
+        val curTs = System.currentTimeMillis()
+
+        if (firstRun) {
+          setPreparing(false)
+          firstTokenTs = System.currentTimeMillis()
+          timeToFirstToken = (firstTokenTs - start) / 1000f
+          val prefillTokens = instance.conversation.getBenchmarkInfo().lastPrefillTokenCount
+          prefillSpeed = prefillTokens / timeToFirstToken
+          firstRun = false
+        } else {
+          decodeTokens++
+        }
+
+        // Incrementally update the streamed partial results.
+        response = processLlmResponse(response = "$response$partialResult")
+
+        // Update response.
+        updateResponse(
+          model = model,
+          promptTemplateType = uiState.value.selectedPromptTemplateType,
+          response = response,
+        )
+
+        // Update benchmark (with throttling).
+        if (curTs - lastBenchmarkUpdateTs > 200) {
+          decodeSpeed = decodeTokens / ((curTs - firstTokenTs) / 1000f)
+          if (decodeSpeed.isNaN()) {
+            decodeSpeed = 0f
+          }
+          val benchmark =
+            ChatMessageBenchmarkLlmResult(
+              orderedStats = STATS,
+              statValues =
+                mutableMapOf(
+                  "prefill_speed" to prefillSpeed,
+                  "decode_speed" to decodeSpeed,
+                  "time_to_first_token" to timeToFirstToken,
+                  "latency" to (curTs - start).toFloat() / 1000f,
+                ),
+              running = !done,
+              latencyMs = -1f,
+            )
+          updateBenchmark(
+            model = model,
+            promptTemplateType = uiState.value.selectedPromptTemplateType,
+            benchmark = benchmark,
+          )
+          lastBenchmarkUpdateTs = curTs
+        }
+
+        if (done) {
+          setInProgress(false)
+        }
+      },
+      cleanUpListener = {
+        setPreparing(false)
+        setInProgress(false)
+      },
+    )
   }
 
   fun selectPromptTemplate(model: Model, promptTemplateType: PromptTemplateType) {
@@ -218,8 +305,14 @@ class LlmSingleTurnViewModel @Inject constructor() : ViewModel() {
     Log.d(TAG, "Stopping response for model ${model.name}...")
     viewModelScope.launch(Dispatchers.Default) {
       setInProgress(false)
-      val instance = model.instance as LlmModelInstance
-      instance.conversation.cancelProcess()
+      if (model.isCloudModel) {
+        // For cloud models, we can't cancel the request once it's started
+        // Just stop the UI progress indicators
+        setPreparing(false)
+      } else {
+        val instance = model.instance as LlmModelInstance
+        instance.conversation.cancelProcess()
+      }
     }
   }
 

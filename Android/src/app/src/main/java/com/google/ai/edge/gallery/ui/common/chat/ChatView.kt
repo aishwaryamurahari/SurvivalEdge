@@ -178,7 +178,8 @@ fun ChatView(
 
       Column(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surface)) {
         AnimatedContent(
-          targetState = curModelDownloadStatus?.status == ModelDownloadStatusType.SUCCEEDED
+          //targetState = curModelDownloadStatus?.status == ModelDownloadStatusType.SUCCEEDED
+          targetState = curModelDownloadStatus?.status == ModelDownloadStatusType.SUCCEEDED || selectedModel.isCloudModel
         ) { targetState ->
           when (targetState) {
             // Main UI when model is downloaded.

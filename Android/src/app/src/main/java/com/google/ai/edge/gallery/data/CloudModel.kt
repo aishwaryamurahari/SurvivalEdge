@@ -28,18 +28,19 @@ data class CloudModelInstance(
 
 object CloudModelDefinitions {
   val OPENAI_GPT4_VISION = Model(
-    name = "gpt-4-vision-preview",
-    displayName = "GPT-4 Vision",
-    info = "OpenAI's GPT-4 Vision model with image understanding capabilities. Requires API key.",
+    name = "gpt-4o",
+    displayName = "GPT-4o",
+    info = "OpenAI's GPT-4o Vision model with image understanding capabilities. Requires API key.",
     isCloudModel = true,
     cloudProvider = "openai",
-    cloudModelName = "gpt-4-vision-preview",
+    cloudModelName = "gpt-4o",
     requiresApiKey = true,
     llmSupportImage = true,
     llmSupportAudio = false,
-    learnMoreUrl = "https://openai.com/gpt-4",
+    learnMoreUrl = "https://openai.com/gpt-4o ",
     bestForTaskIds = listOf(BuiltInTaskId.LLM_ASK_IMAGE)
   )
 
   val CLOUD_MODELS = listOf(OPENAI_GPT4_VISION)
 }
+

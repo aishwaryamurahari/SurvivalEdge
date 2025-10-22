@@ -52,7 +52,7 @@ fun DownloadModelPanel(
         enabled = true,
         modelManagerViewModel = modelManagerViewModel,
         onClicked = onTryItClicked,
-        compact = !isExpanded,
+        compact = false, // Always show text for download buttons
         modifier =
           Modifier.sharedElement(
             sharedContentState = rememberSharedContentState(key = "download_button"),
