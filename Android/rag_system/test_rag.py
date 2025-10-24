@@ -43,7 +43,9 @@ def interactive_test():
             print(f"Result {i}:")
             print(f"  Source: {chunk['source']}")
             print(f"  Section: {chunk['section']}")
-            print(f"  Plant: {chunk['plant_name']}")
+            print(f"  Scientific Name: {chunk.get('scientific_name', 'Unknown')}")
+            print(f"  Common Name: {chunk.get('common_name', 'Unknown')}")
+            print(f"  Family: {chunk.get('family', 'Unknown')}")
             print(f"  Similarity: {chunk['similarity_score']:.3f}")
             print(f"  Text: {chunk['text'][:300]}...")
             print()
@@ -61,16 +63,16 @@ def batch_test():
 
     # Test queries
     test_queries = [
-        "What are the nutritional benefits of dandelion?",
-        "How to identify edible wild berries?",
-        "Are there any toxic plants that look like edible ones?",
-        "What plants are safe to eat in spring?",
-        "How to prepare wild mushrooms safely?",
-        "Tell me about nettle nutrition",
-        "What are the dangers of wild mushrooms?",
-        "How to identify plantain leaves?",
-        "What vitamins are in wild plants?",
-        "Safety tips for foraging"
+        "What is Bryum argenteum and where can it be found?",
+        "How to identify different types of moss?",
+        "What are the medicinal properties of moss?",
+        "Which moss species are found in urban areas?",
+        "What is the taxonomy of Leucolepis acanthoneura?",
+        "Tell me about Plagiomnium cuspidatum uses",
+        "What are the characteristics of badge moss?",
+        "How to identify moss by family?",
+        "What are the habitat requirements for moss?",
+        "Safety considerations for moss identification"
     ]
 
     print("RAG System Batch Test")
@@ -88,6 +90,9 @@ def batch_test():
             # Show top result
             top_chunk = result['chunks'][0]
             print(f"Top match: {top_chunk['source']} - {top_chunk['section']}")
+            print(f"Scientific Name: {top_chunk.get('scientific_name', 'Unknown')}")
+            print(f"Common Name: {top_chunk.get('common_name', 'Unknown')}")
+            print(f"Family: {top_chunk.get('family', 'Unknown')}")
             print(f"Similarity: {top_chunk['similarity_score']:.3f}")
             print(f"Text preview: {top_chunk['text'][:150]}...")
         else:

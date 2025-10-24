@@ -3,8 +3,7 @@ from pathlib import Path
 import json
 
 from config import Config
-from pdf_processor import PDFProcessor
-from text_chunker import TextChunker
+from json_processor import JSONProcessor
 from embedding_generator import EmbeddingGenerator
 from faiss_indexer import FAISSIndexer
 from rag_query_processor import RAGQueryProcessor
@@ -17,52 +16,50 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 def build_rag_system():
-    """Build the complete RAG system from PDFs."""
+    """Build the complete RAG system from JSON data."""
     config = Config()
 
     logger.info("Starting RAG system build process...")
 
-    # Step 1: Process PDFs
-    logger.info("Step 1: Processing PDFs...")
-    pdf_processor = PDFProcessor(config.PDF_DIR)
-    pdf_texts = pdf_processor.process_all_pdfs(config.PDF_FILES)
-
-    if not pdf_texts:
-        logger.error("No PDFs processed successfully. Exiting.")
-        return False
-
-    # Step 2: Chunk texts
-    logger.info("Step 2: Chunking texts...")
-    chunker = TextChunker(
-        chunk_size=config.CHUNK_SIZE,
-        chunk_overlap=config.CHUNK_OVERLAP
-    )
-
+    # Step 1: Process JSON files
+    logger.info("Step 1: Processing JSON files...")
     all_chunks = []
-    for pdf_file, text in pdf_texts.items():
-        chunks = chunker.split_text_into_chunks(text, pdf_file)
-        all_chunks.extend(chunks)
+
+    for json_file in config.JSON_FILES:
+        json_path = config.JSON_DIR / json_file
+        if json_path.exists():
+            json_processor = JSONProcessor(json_path)
+            chunks = json_processor.process_json_to_chunks()
+            all_chunks.extend(chunks)
+            logger.info(f"Processed {len(chunks)} chunks from {json_file}")
+        else:
+            logger.warning(f"JSON file not found: {json_path}")
+
+    if not all_chunks:
+        logger.error("No JSON data processed successfully. Exiting.")
+        return False
 
     logger.info(f"Total chunks created: {len(all_chunks)}")
 
     # Save chunks
-    chunker.save_chunks(all_chunks, config.CHUNKS_FILE)
+    json_processor.save_chunks(all_chunks, config.CHUNKS_FILE)
 
-    # Step 3: Generate embeddings
-    logger.info("Step 3: Generating embeddings...")
+    # Step 2: Generate embeddings
+    logger.info("Step 2: Generating embeddings...")
     embedding_generator = EmbeddingGenerator(config.EMBEDDING_MODEL)
-    processed_chunks, embeddings = embedding_generator.process_chunks_for_embedding(all_chunks)
+    processed_chunks, embeddings = embedding_generator.process_chunks_for_embedding(all_chunks, batch_size=config.EMBEDDING_BATCH_SIZE)
 
-    #Memory cleanup before FAISS
-    logger.info("Step 3.5: Preparing for FAISS index creation...")
+    # Memory cleanup before FAISS
+    logger.info("Step 2.5: Preparing for FAISS index creation...")
     import gc
     gc.collect()  # Force garbage collection
 
     # Ensure embeddings are in the right format
     if hasattr(embeddings, 'cpu'):
         embeddings = embeddings.cpu().numpy()  # Move from GPU to CPU if needed
-    # Step 4: Create FAISS index
-    logger.info("Step 4: Creating FAISS index...")
+
+    # Step 3: Create FAISS index
+    logger.info("Step 3: Creating FAISS index...")
     faiss_indexer = FAISSIndexer(
         dimension=config.EMBEDDING_DIMENSION,
         index_type=config.FAISS_INDEX_TYPE
@@ -70,8 +67,8 @@ def build_rag_system():
 
     faiss_indexer.create_index(embeddings, processed_chunks)
 
-    # Step 5: Save index and metadata
-    logger.info("Step 5: Saving index and metadata...")
+    # Step 4: Save index and metadata
+    logger.info("Step 4: Saving index and metadata...")
     faiss_indexer.save_index(config.FAISS_INDEX_FILE, config.METADATA_FILE)
 
     # Print statistics
@@ -93,11 +90,11 @@ def test_rag_system():
 
     # Test queries
     test_queries = [
-        "What are the nutritional benefits of dandelion?",
-        "How to identify edible wild berries?",
-        "Are there any toxic plants that look like edible ones?",
-        "What plants are safe to eat in spring?",
-        "How to prepare wild mushrooms safely?"
+        "What is Bryum argenteum and where can it be found?",
+        "How to identify different types of moss?",
+        "What are the medicinal properties of moss?",
+        "Which moss species are found in urban areas?",
+        "What is the taxonomy of Leucolepis acanthoneura?"
     ]
 
     for query in test_queries:
@@ -112,7 +109,9 @@ def test_rag_system():
             logger.info(f"\nChunk {i}:")
             logger.info(f"Source: {chunk['source']}")
             logger.info(f"Section: {chunk['section']}")
-            logger.info(f"Plant: {chunk['plant_name']}")
+            logger.info(f"Scientific Name: {chunk.get('scientific_name', 'Unknown')}")
+            logger.info(f"Common Name: {chunk.get('common_name', 'Unknown')}")
+            logger.info(f"Family: {chunk.get('family', 'Unknown')}")
             logger.info(f"Similarity: {chunk['similarity_score']:.3f}")
             logger.info(f"Text: {chunk['text'][:200]}...")
 

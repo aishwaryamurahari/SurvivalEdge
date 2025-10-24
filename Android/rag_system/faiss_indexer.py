@@ -84,8 +84,13 @@ class FAISSIndexer:
             embeddings = self._validate_embeddings(embeddings)
 
             # Normalize for cosine/IP flow; for L2 this is fine too but optional.
-            logger.info("Normalizing embeddings (L2)…")
-            self._normalize_in_place_safe(embeddings)
+            # logger.info("Normalizing embeddings (L2)…")
+            # self._normalize_in_place_safe(embeddings)
+            if self.index_type == "IndexFlatIP":
+                logger.info("Normalizing embeddings for cosine similarity…")
+                self._normalize_in_place_safe(embeddings)
+            else:
+                logger.info("Using raw embeddings for L2 distance…")
 
             # Create index
             logger.info(f"Building index type: {self.index_type}")
@@ -145,16 +150,19 @@ class FAISSIndexer:
                     f"Query dim mismatch: expected {self.dimension}, got {query_embedding.shape[1]}"
                 )
 
-            # Normalize query if using IP (cosine-like)
+            # Normalize query for IP (cosine similarity)
             if self.index_type == "IndexFlatIP":
                 self._normalize_in_place_safe(query_embedding)
 
             # Search
             scores, indices = self.index.search(query_embedding, top_k)
 
-            # Convert L2 distance to similarity in [0, 1)-ish (monotonic transform)
+            # For IP, scores are already similarity scores (0-1 range)
+            # For L2, convert distance to similarity
             if self.index_type == "IndexFlatL2":
-                scores = 1.0 / (1.0 + scores)
+                max_distance = np.max(scores) if len(scores) > 0 else 1.0
+                scores = 1.0 - (scores / max_distance)
+                scores = np.maximum(scores, 0.0)
 
             return scores[0], indices[0]
 
