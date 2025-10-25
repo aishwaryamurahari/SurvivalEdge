@@ -39,7 +39,7 @@ android {
     versionName = "1.0.7"
 
     // Gmail OAuth Client ID for email integration
-    buildConfigField("String", "GMAIL_CLIENT_ID", "Add your Gmail OAuth Client ID here")
+    buildConfigField("String", "GMAIL_CLIENT_ID", "\"302134311149-t7crbokikfad89dp1aas95rtdq2ap7dd.apps.googleusercontent.com\"")
 
     // Needed for HuggingFace auth workflows.
     // Use the scheme of the "Redirect URLs" in HuggingFace app.
@@ -106,6 +106,13 @@ dependencies {
   implementation(platform(libs.firebase.bom))
   implementation(libs.firebase.analytics)
   implementation(libs.androidx.exifinterface)
+
+  // API dependencies for cloud models
+  implementation("com.squareup.retrofit2:retrofit:2.9.0")
+  implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+  implementation("com.squareup.okhttp3:logging-interceptor:4.11.0")
+  implementation("com.squareup.okhttp3:okhttp:4.11.0")
+
   kapt(libs.hilt.android.compiler)
   testImplementation(libs.junit)
   androidTestImplementation(libs.androidx.junit)
