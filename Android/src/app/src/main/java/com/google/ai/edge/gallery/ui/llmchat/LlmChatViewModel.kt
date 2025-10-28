@@ -38,6 +38,7 @@ import com.google.ai.edge.gallery.ui.common.chat.ChatSide
 import com.google.ai.edge.gallery.ui.common.chat.ChatViewModel
 import com.google.ai.edge.gallery.ui.common.chat.Stat
 import com.google.ai.edge.gallery.ui.modelmanager.ModelManagerViewModel
+import com.google.ai.edge.gallery.rag.RagService
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.Dispatchers
@@ -53,7 +54,9 @@ private val STATS =
     Stat(id = "latency", label = "Latency", unit = "sec"),
   )
 
-open class LlmChatViewModelBase() : ChatViewModel() {
+open class LlmChatViewModelBase @Inject constructor(
+  private val ragService: RagService
+) : ChatViewModel() {
   fun generateResponse(
     model: Model,
     input: String,
@@ -68,6 +71,9 @@ open class LlmChatViewModelBase() : ChatViewModel() {
 
       // Loading.
       addMessage(model = model, message = ChatMessageLoading(accelerator = accelerator))
+
+      // RAG Enhancement - enhance the input with plant knowledge
+      val enhancedInput = ragService.enhanceQueryWithRAG(input)
 
       // Check if it's a cloud model
       if (model.isCloudModel) {
@@ -91,7 +97,7 @@ open class LlmChatViewModelBase() : ChatViewModel() {
 
           CloudModelHelper.runInference(
             model = model,
-            input = input,
+            input = enhancedInput,
             images = images,
             resultListener = { partialResult, done ->
               val curTs = System.currentTimeMillis()
@@ -197,7 +203,7 @@ open class LlmChatViewModelBase() : ChatViewModel() {
         try {
           LlmChatModelHelper.runInference(
             model = model,
-            input = input,
+            input = enhancedInput,
             images = images,
             audioClips = audioClips,
             resultListener = { partialResult, done ->
@@ -385,7 +391,7 @@ open class LlmChatViewModelBase() : ChatViewModel() {
 @HiltViewModel class LlmChatViewModel @Inject constructor() : LlmChatViewModelBase()
 */
 
-@HiltViewModel class LlmAskImageViewModel @Inject constructor() : LlmChatViewModelBase()
+@HiltViewModel class LlmAskImageViewModel @Inject constructor(private val ragService: RagService) : LlmChatViewModelBase(ragService)
 
 /*
 @HiltViewModel class LlmAskAudioViewModel @Inject constructor() : LlmChatViewModelBase()

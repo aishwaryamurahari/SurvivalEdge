@@ -29,6 +29,7 @@ import com.google.ai.edge.gallery.data.DataStoreRepository
 import com.google.ai.edge.gallery.data.DefaultDataStoreRepository
 import com.google.ai.edge.gallery.data.DefaultDownloadRepository
 import com.google.ai.edge.gallery.data.DownloadRepository
+import com.google.ai.edge.gallery.rag.RagService
 import com.google.ai.edge.gallery.proto.Settings
 import com.google.ai.edge.gallery.proto.UserData
 import dagger.Module
@@ -108,4 +109,6 @@ internal object AppModule {
   ): DownloadRepository {
     return DefaultDownloadRepository(context, lifecycleProvider)
   }
+
+  // RagService is provided by @Inject constructor in RagService class
 }

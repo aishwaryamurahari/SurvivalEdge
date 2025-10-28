@@ -27,6 +27,7 @@ import com.google.ai.edge.gallery.ui.common.chat.Stat
 import com.google.ai.edge.gallery.ui.llmchat.CloudModelHelper
 import com.google.ai.edge.gallery.ui.llmchat.LlmChatModelHelper
 import com.google.ai.edge.gallery.ui.llmchat.LlmModelInstance
+import com.google.ai.edge.gallery.rag.RagService
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.Dispatchers
@@ -66,7 +67,9 @@ private val STATS =
   )
 
 @HiltViewModel
-class LlmSingleTurnViewModel @Inject constructor() : ViewModel() {
+class LlmSingleTurnViewModel @Inject constructor(
+  private val ragService: RagService
+) : ViewModel() {
   private val _uiState = MutableStateFlow(createUiState())
   val uiState = _uiState.asStateFlow()
 
@@ -75,17 +78,24 @@ class LlmSingleTurnViewModel @Inject constructor() : ViewModel() {
       setInProgress(true)
       setPreparing(true)
 
+      Log.d(TAG, "Generating response for model: ${model.name}, input: '$input'")
+
+      // RAG Enhancement - enhance the input with plant knowledge
+      Log.d(TAG, "Calling RAG service...")
+      val enhancedInput = ragService.enhanceQueryWithRAG(input)
+      Log.d(TAG, "RAG service returned. Enhanced input length: ${enhancedInput.length}")
+
       // Wait for instance to be initialized.
       while (model.instance == null) {
         delay(100)
       }
 
       if (model.isCloudModel) {
-        // Handle cloud model inference
-        runCloudInference(model, input)
+        // Handle cloud model inference with enhanced input
+        runCloudInference(model, enhancedInput)
       } else {
-        // Handle local model inference (existing logic)
-        runLocalInference(task, model, input)
+        // Handle local model inference with enhanced input
+        runLocalInference(task, model, enhancedInput)
       }
     }
   }
