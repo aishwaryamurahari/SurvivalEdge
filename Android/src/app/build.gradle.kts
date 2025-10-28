@@ -23,7 +23,8 @@ plugins {
   alias(libs.plugins.kotlin.serialization)
   alias(libs.plugins.protobuf)
   alias(libs.plugins.hilt.application)
-  alias(libs.plugins.oss.licenses)
+  alias(libs.plugins.ksp)
+  //alias(libs.plugins.oss.licenses)
   kotlin("kapt")
 }
 
@@ -39,7 +40,7 @@ android {
     versionName = "1.0.7"
 
     // Gmail OAuth Client ID for email integration
-    buildConfigField("String", "GMAIL_CLIENT_ID", "\"302134311149-t7crbokikfad89dp1aas95rtdq2ap7dd.apps.googleusercontent.com\"")
+    buildConfigField("String", "GMAIL_CLIENT_ID", "Add your Gmail OAuth Client ID here")
 
     // Needed for HuggingFace auth workflows.
     // Use the scheme of the "Redirect URLs" in HuggingFace app.
@@ -47,6 +48,11 @@ android {
     manifestPlaceholders["applicationName"] = "com.google.ai.edge.gallery.GalleryApplication"
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+    // Add 16KB page size support
+    ndk {
+      abiFilters += listOf("arm64-v8a", "armeabi-v7a")
+    }
   }
 
   buildTypes {
@@ -67,6 +73,27 @@ android {
   buildFeatures {
     compose = true
     buildConfig = true
+  }
+
+  packagingOptions {
+    resources {
+      excludes += "/META-INF/{AL2.0,LGPL2.1}"
+      excludes += "META-INF/INDEX.LIST"
+      excludes += "META-INF/*.SF"
+      excludes += "META-INF/*.DSA"
+      excludes += "META-INF/*.RSA"
+    }
+    jniLibs {
+      useLegacyPackaging = true
+    }
+  }
+
+  // Add 16KB alignment support
+  ndkVersion = "25.1.8937393"
+
+  // Add this new block for noCompress
+  androidResources {
+    noCompress += listOf("tflite")
   }
 }
 
@@ -90,9 +117,9 @@ dependencies {
   implementation(libs.litertlm)
   implementation(libs.commonmark)
   implementation(libs.richtext)
-  implementation(libs.tflite)
-  implementation(libs.tflite.gpu)
-  implementation(libs.tflite.support)
+implementation("org.tensorflow:tensorflow-lite:2.15.0")
+implementation("org.tensorflow:tensorflow-lite-gpu:2.15.0")
+implementation("org.tensorflow:tensorflow-lite-support:0.4.4")
   implementation(libs.camerax.core)
   implementation(libs.camerax.camera2)
   implementation(libs.camerax.lifecycle)
@@ -113,7 +140,17 @@ dependencies {
   implementation("com.squareup.okhttp3:logging-interceptor:4.11.0")
   implementation("com.squareup.okhttp3:okhttp:4.11.0")
 
+  // RAG System Dependencies
+  implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
+  // implementation("androidx.room:room-runtime:2.6.1")
+  // implementation("androidx.room:room-ktx:2.6.1")
+  implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.15.2")
+  implementation("ch.qos.logback:logback-classic:1.2.12")
+  implementation("io.github.microutils:kotlin-logging:3.0.5")
   kapt(libs.hilt.android.compiler)
+  implementation(libs.room.runtime)
+  implementation(libs.room.ktx)
+  ksp(libs.room.compiler)
   testImplementation(libs.junit)
   androidTestImplementation(libs.androidx.junit)
   androidTestImplementation(libs.androidx.espresso.core)

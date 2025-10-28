@@ -16,6 +16,9 @@ class RagService @Inject constructor(
     private var ragSystem: RagSystem? = null
     private var isInitialized = false
     private val logger = LoggingUtils.getLogger(this::class)
+    private companion object {
+        private const val PLANT_PREAMBLE = "You are a botany expert. Answer questions naturally and conversationally using the provided information when available. Use scientific and common names appropriately."
+    }
 
     suspend fun initialize() {
         if (isInitialized) return
@@ -78,23 +81,24 @@ class RagService @Inject constructor(
                 if (hasRelevantInfo) {
                     Log.d("RAG_SERVICE", "✓ Prepending RAG context to query")
                     Log.d("RAG_SERVICE", "============================================")
-                    "Based on the following plant information:\n\n$ragContext\n\nUser question: $userQuery"
+                    // "Based on the following plant information:\n\n$ragContext\n\nUser question: $userQuery"
+                    "$PLANT_PREAMBLE\n\n$ragContext\n\nUser question: $userQuery"
                 } else {
                     Log.w("RAG_SERVICE", "⚠️ RAG context is empty or contains no relevant information, using original query")
                     Log.d("RAG_SERVICE", "============================================")
-                    userQuery // Don't prepend useless context
+                    "$PLANT_PREAMBLE\n\nUser question: $userQuery" // Don't prepend useless context
                 }
             } else {
                 Log.w("RAG_SERVICE", "✗ RAG returned no results (chunks: ${ragResponse?.chunks?.size ?: 0})")
                 Log.w("RAG_SERVICE", "Falling back to original query without RAG enhancement")
                 Log.d("RAG_SERVICE", "============================================")
-                userQuery // Return original query if RAG fails
+                "$PLANT_PREAMBLE\n\nUser question: $userQuery" // Return original query if RAG fails
             }
         } catch (e: Exception) {
             Log.e("RAG_SERVICE", "✗ RAG enhancement failed", e)
             e.printStackTrace()
             Log.d("RAG_SERVICE", "============================================")
-            userQuery // Return original query on error
+            "$PLANT_PREAMBLE\n\nUser question: $userQuery" // Return original query on error
         }
     }
 
