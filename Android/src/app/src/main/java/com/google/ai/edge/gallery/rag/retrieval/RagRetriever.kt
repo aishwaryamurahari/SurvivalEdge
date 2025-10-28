@@ -7,6 +7,7 @@ import com.google.ai.edge.gallery.rag.data.SearchResult
 import com.google.ai.edge.gallery.rag.database.PlantDatabase
 import com.google.ai.edge.gallery.rag.embedding.OnDeviceEmbeddingGenerator
 import com.google.ai.edge.gallery.rag.utils.LoggingUtils
+import com.google.ai.edge.gallery.rag.utils.QueryParser
 
 class RagRetriever(
     private val config: RagConfig,
@@ -20,16 +21,25 @@ class RagRetriever(
             logger.info("Processing query: $query")
             Log.d("RAG_RETRIEVER", "Generating embedding for query: $query")
 
+            // STEP 1: Extract plant name from query
+            val plantName = QueryParser.extractPlantName(query)
+            Log.d("RAG_RETRIEVER", "Extracted plant name: $plantName")
+
+            // STEP 2: Generate embedding for semantic search fallback
             val queryEmbedding = embeddingGenerator.generateEmbedding(query)
             Log.d("RAG_RETRIEVER", "Embedding generated: ${queryEmbedding.size} dimensions")
 
-            Log.d("RAG_RETRIEVER", "Searching database for similar chunks (topK=${config.topK}, threshold=${config.similarityThreshold})")
-            val similarChunks = database.searchSimilarChunks(
-                queryEmbedding,
-                config.topK,
-                config.similarityThreshold
+            Log.d("RAG_RETRIEVER", "Searching database (topK=${config.topK}, threshold=${config.similarityThreshold})")
+
+            // STEP 3: Use hybrid search - metadata first, semantic fallback
+            val similarChunks = database.hybridSearch(
+                plantName = plantName,
+                queryEmbedding = queryEmbedding,
+                topK = config.topK,
+                threshold = config.similarityThreshold
             )
-            Log.d("RAG_RETRIEVER", "Found ${similarChunks.size} similar chunks from database")
+
+            Log.d("RAG_RETRIEVER", "Found ${similarChunks.size} relevant chunks from database")
 
             val results = similarChunks.mapIndexed { index, chunk ->
                 val similarity = calculateSimilarity(queryEmbedding, chunk)

@@ -48,5 +48,23 @@ interface PlantChunkDao {
 
     @Update
     suspend fun updateChunk(chunk: PlantChunkRoom)
+
+    // New methods for memory-efficient similarity search
+    @Query("SELECT chunk_id, embedding FROM plant_chunks LIMIT :limit OFFSET :offset")
+    suspend fun getEmbeddingsBatch(limit: Int, offset: Int): List<EmbeddingData>
+
+    @Query("SELECT * FROM plant_chunks WHERE chunk_id IN (:ids)")
+    suspend fun getChunksByIds(ids: List<Int>): List<PlantChunkRoom>
+
+    // Metadata-based search methods for plant name recognition
+    // NOTE: All queries have LIMIT clauses to prevent OutOfMemoryError
+    @Query("SELECT * FROM plant_chunks WHERE common_name LIKE '%' || :plantName || '%' OR scientific_name LIKE '%' || :plantName || '%' LIMIT :limit")
+    suspend fun searchByPlantName(plantName: String, limit: Int = 100): List<PlantChunkRoom>
+
+    @Query("SELECT * FROM plant_chunks WHERE LOWER(common_name) LIKE LOWER('%' || :partialName || '%') LIMIT :limit")
+    suspend fun searchByPartialName(partialName: String, limit: Int = 100): List<PlantChunkRoom>
+
+    @Query("SELECT * FROM plant_chunks WHERE scientific_name LIKE '%' || :scientificName || '%' LIMIT :limit")
+    suspend fun searchByScientificName(scientificName: String, limit: Int = 100): List<PlantChunkRoom>
 }
 

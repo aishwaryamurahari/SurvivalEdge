@@ -70,9 +70,20 @@ class RagService @Inject constructor(
                 Log.d("RAG_SERVICE", "✓ RAG returned ${ragResponse.chunks.size} relevant chunks")
                 Log.d("RAG_SERVICE", "✓ Total results: ${ragResponse.totalResults}")
                 Log.d("RAG_SERVICE", "Enhanced input length: ${ragContext.length} chars")
-                Log.d("RAG_SERVICE", "============================================")
 
-                "Based on the following plant information:\n\n$ragContext\n\nUser question: $userQuery"
+                // Only prepend context if it contains meaningful information
+                val hasRelevantInfo = ragContext.isNotBlank() &&
+                    !ragContext.contains("No relevant information found", ignoreCase = true)
+
+                if (hasRelevantInfo) {
+                    Log.d("RAG_SERVICE", "✓ Prepending RAG context to query")
+                    Log.d("RAG_SERVICE", "============================================")
+                    "Based on the following plant information:\n\n$ragContext\n\nUser question: $userQuery"
+                } else {
+                    Log.w("RAG_SERVICE", "⚠️ RAG context is empty or contains no relevant information, using original query")
+                    Log.d("RAG_SERVICE", "============================================")
+                    userQuery // Don't prepend useless context
+                }
             } else {
                 Log.w("RAG_SERVICE", "✗ RAG returned no results (chunks: ${ragResponse?.chunks?.size ?: 0})")
                 Log.w("RAG_SERVICE", "Falling back to original query without RAG enhancement")
@@ -101,4 +112,37 @@ class RagService @Inject constructor(
     }
 
     fun isInitialized(): Boolean = isInitialized
+
+    /**
+     * Clean up database by removing duplicate entries.
+     * Call this if you see duplicate results in searches.
+     *
+     * @return true if cleanup was performed, false if no duplicates were found
+     */
+    suspend fun cleanupDatabase(): Boolean {
+        if (!isInitialized) {
+            Log.d("RAG_SERVICE", "⚠️ Not initialized, initializing now...")
+            initialize()
+        }
+
+        return try {
+            Log.d("RAG_SERVICE", "🧹 Starting database cleanup...")
+            val config = RagConfig(context)
+            val database = com.google.ai.edge.gallery.rag.database.PlantDatabase(config)
+            database.initialize()
+            val cleaned = database.cleanupDatabase()
+
+            if (cleaned) {
+                Log.d("RAG_SERVICE", "✓ Database cleanup completed")
+            } else {
+                Log.d("RAG_SERVICE", "✓ No duplicates found in database")
+            }
+
+            cleaned
+        } catch (e: Exception) {
+            Log.e("RAG_SERVICE", "✗ Database cleanup failed", e)
+            logger.error("Database cleanup failed", e)
+            false
+        }
+    }
 }
