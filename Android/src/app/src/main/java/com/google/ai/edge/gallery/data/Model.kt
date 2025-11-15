@@ -223,6 +223,21 @@ data class Model(
   var configValues: Map<String, Any> = mapOf(),
   var totalBytes: Long = 0L,
   var accessToken: String? = null,
+
+  /** Whether this is a cloud-based model (OpenAI, etc.) */
+  val isCloudModel: Boolean = false,
+
+  /** The cloud provider for this model (e.g., "openai", "anthropic") */
+  val cloudProvider: String = "",
+
+  /** The API endpoint for cloud models */
+  val apiEndpoint: String = "",
+
+  /** Whether this model requires an API key */
+  val requiresApiKey: Boolean = false,
+
+  /** The specific model name for the cloud provider (e.g., "gpt-4-vision-preview") */
+  val cloudModelName: String = "",
 ) {
   init {
     normalizedName = NORMALIZE_NAME_REGEX.replace(name, "_")

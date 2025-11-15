@@ -108,11 +108,17 @@ fun LlmSingleTurnScreen(
   val curDownloadStatus = modelManagerUiState.modelDownloadStatus[selectedModel.name]
   LaunchedEffect(curDownloadStatus, selectedModel.name) {
     if (!navigatingUp) {
-      if (curDownloadStatus?.status == ModelDownloadStatusType.SUCCEEDED) {
-        Log.d(
-          TAG,
-          "Initializing model '${selectedModel.name}' from LlmsingleTurnScreen launched effect",
-        )
+      if (selectedModel.isCloudModel) {
+        // For cloud models, check if API key is configured
+        val cloudConfig = modelManagerUiState.cloudApiConfigs.find {
+          it.provider == selectedModel.cloudProvider
+        }
+        if (cloudConfig?.isConnected == true) {
+          Log.d(TAG, "Initializing cloud model '${selectedModel.name}'")
+          modelManagerViewModel.initializeModel(context, task = task, model = selectedModel)
+        }
+      } else if (curDownloadStatus?.status == ModelDownloadStatusType.SUCCEEDED) {
+        Log.d(TAG, "Initializing local model '${selectedModel.name}'")
         modelManagerViewModel.initializeModel(context, task = task, model = selectedModel)
       }
     }

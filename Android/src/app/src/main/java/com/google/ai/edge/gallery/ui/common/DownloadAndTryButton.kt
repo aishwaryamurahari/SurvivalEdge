@@ -26,23 +26,28 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowForward
 import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material.icons.outlined.CloudDone
+import androidx.compose.material.icons.outlined.CloudOff
 import androidx.compose.material.icons.outlined.FileDownload
 import androidx.compose.material.icons.rounded.Error
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -50,11 +55,13 @@ import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -122,6 +129,7 @@ fun DownloadAndTryButton(
   downloadStatus: ModelDownloadStatus?,
   modelManagerViewModel: ModelManagerViewModel,
   onClicked: () -> Unit,
+  onApiKeyClicked: ((Model) -> Unit)? = null,
   modifier: Modifier = Modifier,
   compact: Boolean = false,
   canShowTryIt: Boolean = true,
@@ -135,8 +143,18 @@ fun DownloadAndTryButton(
   var downloadStarted by remember { mutableStateOf(false) }
   val sheetState = rememberModalBottomSheetState()
 
+  // Handle cloud models
+  val isCloudModel = model.isCloudModel
+  val modelManagerUiState by modelManagerViewModel.uiState.collectAsState()
+  val cloudConfig = if (isCloudModel) {
+    modelManagerUiState.cloudApiConfigs.find { it.provider == model.cloudProvider }
+  } else null
+  val isCloudConnected = cloudConfig?.isConnected ?: false
+  val isCloudInitialized = modelManagerUiState.isModelInitialized(model)
+  val isCloudInitializing = modelManagerUiState.isModelInitializing(model)
+
   val needToDownloadFirst =
-    (downloadStatus?.status == ModelDownloadStatusType.NOT_DOWNLOADED ||
+    !isCloudModel && (downloadStatus?.status == ModelDownloadStatusType.NOT_DOWNLOADED ||
       downloadStatus?.status == ModelDownloadStatusType.FAILED) &&
       model.localFileRelativeDirPathOverride.isEmpty()
   val inProgress = downloadStatus?.status == ModelDownloadStatusType.IN_PROGRESS
@@ -329,59 +347,172 @@ fun DownloadAndTryButton(
     if (!compact) {
       buttonModifier = buttonModifier.fillMaxWidth()
     }
-    Button(
-      modifier = buttonModifier,
-      colors =
-        ButtonDefaults.buttonColors(
-          containerColor =
-            if (
-              (!downloadSucceeded || !canShowTryIt) &&
-                model.localFileRelativeDirPathOverride.isEmpty()
-            )
-              MaterialTheme.colorScheme.surfaceContainer
-            else getTaskBgGradientColors(task = task)[1]
-        ),
-      contentPadding = PaddingValues(horizontal = 12.dp),
-      onClick = {
-        if (!enabled || checkingToken) {
-          return@Button
-        }
 
-        if (isMemoryLow(context = context, model = model)) {
-          showMemoryWarning = true
-        } else {
-          handleClickButton()
+    // Handle cloud models
+    if (isCloudModel) {
+      if (!isCloudConnected) {
+        // Show Connect button for cloud models without API key
+        OutlinedButton(
+          modifier = buttonModifier,
+          contentPadding = PaddingValues(horizontal = 12.dp),
+          onClick = {
+            if (onApiKeyClicked != null) {
+              onApiKeyClicked(model)
+            }
+          },
+        ) {
+          Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+          ) {
+            Icon(
+              Icons.Outlined.CloudOff,
+              contentDescription = null,
+              tint = MaterialTheme.colorScheme.primary,
+            )
+            if (!compact) {
+              Text(
+                "Connect",
+                color = MaterialTheme.colorScheme.primary,
+                style = MaterialTheme.typography.titleMedium,
+              )
+            }
+          }
         }
-      },
-    ) {
-      val textColor =
-        if (!downloadSucceeded && model.localFileRelativeDirPathOverride.isEmpty())
-          MaterialTheme.colorScheme.onSurface
-        else Color.White
-      Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+      } else if (isCloudInitialized) {
+        // Show Try it button for connected and initialized cloud models
+        Button(
+          modifier = buttonModifier,
+          colors = ButtonDefaults.buttonColors(
+            containerColor = getTaskBgGradientColors(task = task)[1]
+          ),
+          contentPadding = PaddingValues(horizontal = 12.dp),
+          onClick = {
+            if (!enabled) return@Button
+            onClicked()
+          },
+        ) {
+          Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+          ) {
+            Icon(
+              Icons.AutoMirrored.Rounded.ArrowForward,
+              contentDescription = null,
+              tint = Color.White,
+            )
+            if (!compact && canShowTryIt) {
+              Text(
+                stringResource(R.string.try_it),
+                color = Color.White,
+                style = MaterialTheme.typography.titleMedium,
+              )
+            }
+          }
+        }
+      } else if (isCloudInitializing) {
+        // Show loading indicator for cloud models being initialized
+        Box(
+          modifier = buttonModifier,
+          contentAlignment = Alignment.Center
+        ) {
+          CircularProgressIndicator(
+            modifier = Modifier.size(24.dp),
+            color = MaterialTheme.colorScheme.primary
+          )
+        }
+      } else {
+        // Show Initialize button for connected but not initialized cloud models
+        Button(
+          modifier = buttonModifier,
+          colors = ButtonDefaults.buttonColors(
+            containerColor = MaterialTheme.colorScheme.primary
+          ),
+          contentPadding = PaddingValues(horizontal = 12.dp),
+          onClick = {
+            if (!enabled) return@Button
+            modelManagerViewModel.initializeModel(
+              context = context,
+              task = task,
+              model = model
+            )
+          },
+        ) {
+          Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+          ) {
+            Icon(
+              Icons.Outlined.CloudDone,
+              contentDescription = null,
+              tint = Color.White,
+            )
+            if (!compact) {
+              Text(
+                "Initialize",
+                color = Color.White,
+                style = MaterialTheme.typography.titleMedium,
+              )
+            }
+          }
+        }
+      }
+    } else {
+      // Handle local models (existing logic)
+      Button(
+        modifier = buttonModifier,
+        colors =
+          ButtonDefaults.buttonColors(
+            containerColor =
+              if (
+                (!downloadSucceeded || !canShowTryIt) &&
+                  model.localFileRelativeDirPathOverride.isEmpty()
+              )
+                MaterialTheme.colorScheme.surfaceContainer
+              else getTaskBgGradientColors(task = task)[1]
+          ),
+        contentPadding = PaddingValues(horizontal = 12.dp),
+        onClick = {
+          if (!enabled || checkingToken) {
+            return@Button
+          }
+
+          if (isMemoryLow(context = context, model = model)) {
+            showMemoryWarning = true
+          } else {
+            handleClickButton()
+          }
+        },
       ) {
-        Icon(
-          if (needToDownloadFirst) Icons.Outlined.FileDownload
-          else Icons.AutoMirrored.Rounded.ArrowForward,
-          contentDescription = null,
-          tint = textColor,
-        )
+        val textColor =
+          if (!downloadSucceeded && model.localFileRelativeDirPathOverride.isEmpty())
+            MaterialTheme.colorScheme.onSurface
+          else Color.White
+        Row(
+          verticalAlignment = Alignment.CenterVertically,
+          horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+          Icon(
+            if (needToDownloadFirst) Icons.Outlined.FileDownload
+            else Icons.AutoMirrored.Rounded.ArrowForward,
+            contentDescription = null,
+            tint = textColor,
+          )
 
-        if (!compact) {
-          if (needToDownloadFirst) {
-            Text(
-              stringResource(R.string.download),
-              color = textColor,
-              style = MaterialTheme.typography.titleMedium,
-            )
-          } else if (canShowTryIt) {
-            Text(
-              stringResource(R.string.try_it),
-              color = textColor,
-              style = MaterialTheme.typography.titleMedium,
-            )
+          if (!compact) {
+            if (needToDownloadFirst) {
+              Text(
+                stringResource(R.string.download),
+                color = textColor,
+                style = MaterialTheme.typography.titleMedium,
+              )
+            } else if (canShowTryIt) {
+              Text(
+                stringResource(R.string.try_it),
+                color = textColor,
+                style = MaterialTheme.typography.titleMedium,
+              )
+            }
           }
         }
       }

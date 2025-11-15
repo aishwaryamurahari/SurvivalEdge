@@ -59,6 +59,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.google.ai.edge.gallery.customtasks.common.CustomTaskData
 import com.google.ai.edge.gallery.customtasks.common.CustomTaskDataForBuiltinTask
+import com.google.ai.edge.gallery.data.BuiltInTaskId
 import com.google.ai.edge.gallery.data.ModelDownloadStatusType
 import com.google.ai.edge.gallery.data.Task
 import com.google.ai.edge.gallery.data.isBuiltInTask
@@ -143,6 +144,34 @@ fun GalleryNavHost(
     onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
   }
 
+  // Auto-redirect to Ask Image task
+  // LaunchedEffect(Unit) {
+  //  // Wait for tasks to be loaded
+  //   val tasks = modelManagerViewModel.uiState.value.tasks
+  //   if (tasks.isNotEmpty()) {
+  //    val askImageTask = modelManagerViewModel.getTaskById(BuiltInTaskId.LLM_ASK_IMAGE)
+  //     if (askImageTask != null) {
+  //       pickedTask = askImageTask
+  //       showModelManager = true
+  //       firebaseAnalytics?.logEvent("capability_select", bundleOf("capability_name" to askImageTask.id))
+  //    }
+  //   }
+  // }
+
+  // LaunchedEffect(Unit) {
+  //   // Wait for tasks to be loaded
+  //   val tasks = modelManagerViewModel.uiState.value.tasks
+  //   if (tasks.isNotEmpty()) {
+  //     val askImageTask = modelManagerViewModel.getTaskById(BuiltInTaskId.LLM_ASK_IMAGE)
+  //     if (askImageTask != null) {
+  //       pickedTask = askImageTask
+  //       showModelManager = true
+  //       firebaseAnalytics?.logEvent("capability_select", bundleOf("capability_name" to askImageTask.id))
+  //     }
+  //   }
+  // }
+
+  // Hide HomeScreen since we auto-redirect to Ask Image
   HomeScreen(
     modelManagerViewModel = modelManagerViewModel,
     tosViewModel = hiltViewModel(),
@@ -337,7 +366,8 @@ private fun CustomTaskScreen(
     ) {
       val curModelDownloadStatus = modelManagerUiState.modelDownloadStatus[selectedModel.name]
       AnimatedContent(
-        targetState = curModelDownloadStatus?.status == ModelDownloadStatusType.SUCCEEDED
+        //targetState = curModelDownloadStatus?.status == ModelDownloadStatusType.SUCCEEDED
+        targetState = curModelDownloadStatus?.status == ModelDownloadStatusType.SUCCEEDED || selectedModel.isCloudModel
       ) { targetState ->
         when (targetState) {
           // Main UI when model is downloaded.

@@ -49,6 +49,7 @@ import com.google.ai.edge.gallery.ui.common.ClickableLink
 import com.google.ai.edge.gallery.ui.common.humanReadableSize
 import com.google.ai.edge.gallery.ui.theme.customColors
 import com.google.ai.edge.gallery.ui.theme.labelSmallNarrow
+import androidx.compose.material.icons.filled.CloudDone
 
 /**
  * Composable function to display the model name and its download status information.
@@ -104,17 +105,26 @@ fun ModelNameAndStatus(
       }
 
       // Model name and action buttons.
-      Text(
-        model.displayName.ifEmpty { model.name },
-        maxLines = 1,
-        overflow = TextOverflow.MiddleEllipsis,
-        style = MaterialTheme.typography.titleMedium,
-        modifier =
-          Modifier.sharedElement(
-            rememberSharedContentState(key = "model_name"),
-            animatedVisibilityScope = animatedVisibilityScope,
-          ),
-      )
+      Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+      ) {
+        // Add cloud icon for cloud models
+        if (model.isCloudModel) {
+          Icon(
+            Icons.Filled.CloudDone, // or CloudOff based on connection status
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(16.dp)
+          )
+        }
+        Text(
+          model.displayName.ifEmpty { model.name },
+          maxLines = 1,
+          overflow = TextOverflow.MiddleEllipsis,
+          style = MaterialTheme.typography.titleMedium,
+        )
+      }
 
       // Status icon + size + download progress details.
       Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 4.dp)) {

@@ -58,12 +58,21 @@ message LlmConfig {
   bool support_audio = 7;
 }
 
+message CloudApiConfig {
+  string provider = 1; // "openai", "anthropic", etc.
+  string api_key = 2;
+  string base_url = 3; // Optional custom endpoint
+  string model_name = 4; // "gpt-4-vision-preview"
+  bool is_connected = 5;
+}
+
 message Settings {
   Theme theme = 1;
   AccessTokenData access_token_data = 2;  // deprecated
   repeated string text_input_history = 3;
   repeated ImportedModel imported_model = 4;
   bool is_tos_accepted = 5;
+  repeated CloudApiConfig cloud_api_configs = 6;
 }
 
 message UserData {

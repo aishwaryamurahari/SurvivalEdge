@@ -16,9 +16,9 @@
 
 <resources>
   <!-- TODO(jingjin): Add translation support when i18n is ready. -->
-  <string name="app_name" translatable="false">Google AI Edge Gallery</string>
-  <string name="app_name_first_part" translatable="false">Google AI</string>
-  <string name="app_name_second_part" translatable="false">Edge Gallery</string>
+  <string name="app_name" translatable="false">Survival Edge</string>
+  <string name="app_name_first_part" translatable="false">Survival</string>
+  <string name="app_name_second_part" translatable="false">Edge</string>
   <string name="app_intro" translatable="false">Explore a world of amazing on-device models from</string>
   <string name="best_overall" translatable="false">Best overall</string>
   <plurals name="model_list_number_of_models_available" translatable="false">
@@ -66,8 +66,8 @@
   <string name="tos_dialog_view_full_tos" translatable="false">View this app\'s Terms of Service</string>
   <string name="tos_dialog_view_accept_button_label" translatable="false">Accept and Continue</string>
   <string name="try_it" translatable="false">Try it</string>
-  <string name="run_again" translatable="false">Run again</string>
-  <string name="benchmark" translatable="false">Run benchmark</string>
+  <!-- <string name="run_again" translatable="false">Run again</string>
+  <string name="benchmark" translatable="false">Run benchmark</string> -->
   <string name="warming_up" translatable="false">warming up…</string>
   <string name="running" translatable="false">running</string>
   <string name="enter_instruction" translatable="false">Enter instruction</string>
@@ -181,4 +181,14 @@
   <string name="cd_switch_to_keyboard">Switch to keyboard</string>
   <!-- Content description spoken when the "switch to voice" icon is focused. [CHAR_LIMIT=NONE] -->
   <string name="cd_switch_to_voice">Switch to voice</string>
+
+  <!-- Cloud model related strings -->
+  <string name="cloud_models" translatable="false">Cloud Models</string>
+  <string name="connect" translatable="false">Connect</string>
+  <string name="connected" translatable="false">Connected</string>
+  <string name="not_connected" translatable="false">Not connected</string>
+  <string name="api_key" translatable="false">API Key</string>
+  <string name="enter_api_key" translatable="false">Enter your API key to use %s</string>
+  <string name="api_settings" translatable="false">API Settings</string>
+  <string name="cloud_model_requires_api_key" translatable="false">This cloud model requires an API key</string>
 </resources>

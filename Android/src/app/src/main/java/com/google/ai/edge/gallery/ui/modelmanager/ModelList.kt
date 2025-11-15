@@ -64,6 +64,8 @@ import com.google.ai.edge.gallery.ui.common.TaskIcon
 import com.google.ai.edge.gallery.ui.common.getTaskBgColor
 import com.google.ai.edge.gallery.ui.common.getTaskBgGradientColors
 import com.google.ai.edge.gallery.ui.common.modelitem.ModelItem
+import com.google.ai.edge.gallery.ui.common.modelitem.CloudModelItem
+import com.google.ai.edge.gallery.data.CloudModelDefinitions
 import com.google.ai.edge.gallery.ui.common.rememberDelayedAnimationProgress
 import com.google.ai.edge.gallery.ui.theme.bodyLargeNarrow
 import com.google.ai.edge.gallery.ui.theme.headlineLargeMedium
@@ -83,16 +85,23 @@ fun ModelList(
   modelManagerViewModel: ModelManagerViewModel,
   contentPadding: PaddingValues,
   onModelClicked: (Model) -> Unit,
+  onApiKeyClicked: (Model) -> Unit = {},
   modifier: Modifier = Modifier,
 ) {
   // This is just to update "models" list when task.updateTrigger is updated so that the UI can
   // be properly updated.
+
+  // Filter cloud models from the task
+  // val cloudModels = remember(task) {
+  //   task.models.filter { it.isCloudModel }
+  // }
+
   val models by
     remember(task) {
       derivedStateOf {
         val trigger = task.updateTrigger.value
         if (trigger >= 0) {
-          task.models.toList().filter { !it.imported }
+          task.models.toList().filter { !it.imported && !it.isCloudModel }
         } else {
           listOf()
         }
@@ -104,6 +113,18 @@ fun ModelList(
         val trigger = task.updateTrigger.value
         if (trigger >= 0) {
           task.models.toList().filter { it.imported }
+        } else {
+          listOf()
+        }
+      }
+    }
+
+  val cloudModels by
+    remember(task) {
+      derivedStateOf {
+        val trigger = task.updateTrigger.value
+        if (trigger >= 0) {
+          task.models.toList().filter { it.isCloudModel }
         } else {
           listOf()
         }
@@ -197,35 +218,35 @@ fun ModelList(
           )
 
           // Urls.
-          if (task.docUrl.isNotEmpty() || task.sourceCodeUrl.isNotEmpty()) {
-            Box(
-              modifier =
-                Modifier.padding(vertical = 8.dp).graphicsLayer {
-                  alpha = descriptionProgress
-                  translationY = (CONTENT_ANIMATION_OFFSET * (1 - descriptionProgress)).toPx()
-                }
-            ) {
-              Column(
-                horizontalAlignment = Alignment.Start,
-                verticalArrangement = Arrangement.spacedBy(4.dp),
-              ) {
-                if (task.docUrl.isNotEmpty()) {
-                  ClickableLink(
-                    url = task.docUrl,
-                    linkText = "API Documentation",
-                    icon = Icons.Outlined.Description,
-                  )
-                }
-                if (task.sourceCodeUrl.isNotEmpty()) {
-                  ClickableLink(
-                    url = task.sourceCodeUrl,
-                    linkText = "Example code",
-                    icon = Icons.Outlined.Code,
-                  )
-                }
-              }
-            }
-          }
+            // if (task.docUrl.isNotEmpty() || task.sourceCodeUrl.isNotEmpty()) {
+            //   Box(
+            //     modifier =
+            //       Modifier.padding(vertical = 8.dp).graphicsLayer {
+            //         alpha = descriptionProgress
+            //         translationY = (CONTENT_ANIMATION_OFFSET * (1 - descriptionProgress)).toPx()
+            //       }
+            //   ) {
+            //     Column(
+            //       horizontalAlignment = Alignment.Start,
+            //       verticalArrangement = Arrangement.spacedBy(4.dp),
+            //     ) {
+            //       if (task.docUrl.isNotEmpty()) {
+            //         ClickableLink(
+            //           url = task.docUrl,
+            //           linkText = "API Documentation",
+            //           icon = Icons.Outlined.Description,
+            //         )
+            //       }
+            //       if (task.sourceCodeUrl.isNotEmpty()) {
+            //         ClickableLink(
+            //           url = task.sourceCodeUrl,
+            //           linkText = "Example code",
+            //           icon = Icons.Outlined.Code,
+            //         )
+            //       }
+            //     }
+            //   }
+            // }
 
           // Models available.
           val resources = LocalContext.current.resources
@@ -294,7 +315,7 @@ fun ModelList(
         }
       }
 
-      // List of imported models within a task.
+      //List of imported models within a task.
       items(items = importedModels, key = { it.name }) { model ->
         Box {
           ModelItem(
@@ -309,6 +330,40 @@ fun ModelList(
               },
           )
         }
+      }
+
+      // Title for cloud models
+      // if (cloudModels.isNotEmpty()) {
+      //   item(key = "cloudModelsTitle") {
+      //     Text(
+      //       "Cloud Models",
+      //       color = MaterialTheme.colorScheme.onSurface,
+      //       style = MaterialTheme.typography.labelLarge,
+      //       modifier =
+      //         Modifier.padding(horizontal = 16.dp)
+      //           .padding(top = 32.dp, bottom = 8.dp)
+      //           .graphicsLayer {
+      //             alpha = modelListProgress
+      //             translationY = (CONTENT_ANIMATION_OFFSET * (1 - modelListProgress)).toPx()
+      //           },
+      //     )
+      //   }
+      // }
+
+      // List of cloud models within a task.
+      items(items = cloudModels, key = { it.name }) { model ->
+        CloudModelItem(
+          model = model,
+          task = task,
+          modelManagerViewModel = modelManagerViewModel,
+          onModelClicked = onModelClicked,
+          onApiKeyClicked = onApiKeyClicked,
+          modifier =
+            Modifier.graphicsLayer {
+              alpha = modelListProgress
+              translationY = (CONTENT_ANIMATION_OFFSET * (1 - modelListProgress)).toPx()
+            },
+        )
       }
 
       item(key = "paddingBottom") { Spacer(modifier = Modifier.height(40.dp)) }

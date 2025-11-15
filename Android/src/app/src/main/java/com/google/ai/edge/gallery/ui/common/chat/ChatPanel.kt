@@ -505,27 +505,27 @@ fun ChatPanel(
                       horizontalArrangement = Arrangement.spacedBy(4.dp),
                     ) {
                       // Run again button.
-                      if (selectedModel.showRunAgainButton) {
-                        MessageActionButton(
-                          label = stringResource(R.string.run_again),
-                          icon = Icons.Rounded.Refresh,
-                          onClick = { onRunAgainClicked(selectedModel, message) },
-                          enabled = !uiState.inProgress,
-                        )
-                      }
+                      // if (selectedModel.showRunAgainButton) {
+                      //   MessageActionButton(
+                      //     label = stringResource(R.string.run_again),
+                      //     icon = Icons.Rounded.Refresh,
+                      //     onClick = { onRunAgainClicked(selectedModel, message) },
+                      //     enabled = !uiState.inProgress,
+                      //   )
+                      // }
 
                       // Benchmark button
-                      if (selectedModel.showBenchmarkButton) {
-                        MessageActionButton(
-                          label = stringResource(R.string.benchmark),
-                          icon = Icons.Outlined.Timer,
-                          onClick = {
-                            showBenchmarkConfigsDialog = true
-                            benchmarkMessage.value = message
-                          },
-                          enabled = !uiState.inProgress,
-                        )
-                      }
+                      // if (selectedModel.showBenchmarkButton) {
+                      //   MessageActionButton(
+                      //     label = stringResource(R.string.benchmark),
+                      //     icon = Icons.Outlined.Timer,
+                      //     onClick = {
+                      //       showBenchmarkConfigsDialog = true
+                      //       benchmarkMessage.value = message
+                      //     },
+                      //     enabled = !uiState.inProgress,
+                      //   )
+                      // }
                     }
                   }
                 }

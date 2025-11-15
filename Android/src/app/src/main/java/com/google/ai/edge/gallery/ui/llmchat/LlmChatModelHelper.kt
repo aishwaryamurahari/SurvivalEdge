@@ -38,6 +38,7 @@ import com.google.ai.edge.litertlm.MessageCallbacks
 import com.google.ai.edge.litertlm.SamplerConfig
 import java.io.ByteArrayOutputStream
 import java.util.concurrent.CancellationException
+import com.google.ai.edge.gallery.data.CloudModelInstance
 
 private const val TAG = "AGLlmChatModelHelper"
 
@@ -147,32 +148,44 @@ object LlmChatModelHelper {
   }
 
   fun cleanUp(model: Model, onDone: () -> Unit) {
-    if (model.instance == null) {
-      return
-    }
+      if (model.instance == null) {
+          return
+      }
 
-    val instance = model.instance as LlmModelInstance
+      when (val instance = model.instance) {
+          is LlmModelInstance -> {
+              // Handle local model cleanup
+              try {
+                  instance.conversation.close()
+              } catch (e: Exception) {
+                  Log.e(TAG, "Failed to close the LLM Inference conversation: ${e.message}")
+              }
 
-    try {
-      instance.conversation.close()
-    } catch (e: Exception) {
-      Log.e(TAG, "Failed to close the LLM Inference conversation: ${e.message}")
-    }
+              try {
+                  instance.engine.close()
+              } catch (e: Exception) {
+                  Log.e(TAG, "Failed to close the LLM Inference engine: ${e.message}")
+              }
 
-    try {
-      instance.engine.close()
-    } catch (e: Exception) {
-      Log.e(TAG, "Failed to close the LLM Inference engine: ${e.message}")
-    }
+              val onCleanUp = cleanUpListeners.remove(model.name)
+              if (onCleanUp != null) {
+                  onCleanUp()
+              }
+              model.instance = null
 
-    val onCleanUp = cleanUpListeners.remove(model.name)
-    if (onCleanUp != null) {
-      onCleanUp()
-    }
-    model.instance = null
-
-    onDone()
-    Log.d(TAG, "Clean up done.")
+              onDone()
+              Log.d(TAG, "Clean up done.")
+          }
+          is CloudModelInstance -> {
+              // Handle cloud model cleanup - call CloudModelHelper.cleanUp
+              CloudModelHelper.cleanUp(model) { onDone() }
+          }
+          else -> {
+              // Handle null or other cases
+              Log.w(TAG, "Unknown model instance type: ${model.instance?.javaClass}")
+              onDone()
+          }
+      }
   }
 
   fun runInference(

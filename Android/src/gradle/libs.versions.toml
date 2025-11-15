@@ -1,6 +1,8 @@
 [versions]
-agp = "8.8.2"
-kotlin = "2.1.0"
+agp = "8.6.1"
+kotlin = "2.0.21"
+ksp = "2.0.21-1.0.27"
+room = "2.6.1"
 coreKtx = "1.15.0"
 junit = "4.13.2"
 junitVersion = "1.2.1"
@@ -29,7 +31,7 @@ netOpenidAppauth = "0.11.1"
 splashscreen = "1.2.0-beta01"
 hilt = "2.57"
 hiltNavigation = "1.2.0"
-ossLicenses = "0.10.6"
+ossLicenses = "0.10.7"
 playServicesOssLicenses = "17.1.0"
 googleService = "4.4.3"
 firebaseBom = "33.16.0"
@@ -82,6 +84,9 @@ firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.r
 # library dependencies.
 firebase-analytics = { group = "com.google.firebase", name = "firebase-analytics" }
 androidx-exifinterface = { group = "androidx.exifinterface", name = "exifinterface", version.ref = "exifinterface" }
+room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
+room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
+room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
@@ -90,5 +95,6 @@ kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "ko
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "serializationPlugin" }
 protobuf = {id = "com.google.protobuf", version.ref = "protobuf"}
 hilt-application = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
+ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 oss-licenses = {id = "com.google.android.gms.oss-licenses-plugin", version.ref = "ossLicenses"}
 google-services = { id = "com.google.gms.google-services", version.ref = "googleService" }
